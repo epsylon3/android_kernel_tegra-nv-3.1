@@ -32,6 +32,8 @@
 #include <linux/delay.h>
 #include <linux/regulator/consumer.h>
 
+#define DRIVER_NAME "nct1008"
+
 /* Register Addresses */
 #define LOCAL_TEMP_RD			0x00
 #define EXT_TEMP_RD_HI			0x01
@@ -401,7 +403,7 @@ static void print_reg(const char *reg_name, struct seq_file *s,
 
 static int dbg_nct1008_show(struct seq_file *s, void *unused)
 {
-	seq_printf(s, "nct1008 nct72 Registers\n");
+	seq_printf(s, "nct1008 Registers\n");
 	seq_printf(s, "------------------\n");
 	print_reg("Local Temp Value    ",     s, 0x00);
 	print_reg("Ext Temp Value Hi   ",     s, 0x01);
@@ -440,12 +442,8 @@ static int __init nct1008_debuginit(struct nct1008_data *nct)
 {
 	int err = 0;
 	struct dentry *d;
-	if (nct->chip == NCT72)
-		d = debugfs_create_file("nct72", S_IRUGO, NULL,
-				(void *)nct, &debug_fops);
-	else
-		d = debugfs_create_file("nct1008", S_IRUGO, NULL,
-				(void *)nct, &debug_fops);
+	d = debugfs_create_file("nct1008", S_IRUGO, NULL,
+			(void *)nct, &debug_fops);
 	if ((!d) || IS_ERR(d)) {
 		dev_err(&nct->client->dev, "Error: %s debugfs_create_file"
 			" returned an error\n", __func__);
@@ -474,6 +472,16 @@ static int nct1008_enable(struct i2c_client *client)
 	struct nct1008_data *data = i2c_get_clientdata(client);
 	int err;
 
+#ifdef CONFIG_MACH_SAMSUNG_VARIATION_TEGRA
+	struct regulator *reg = regulator_get(NULL, "vdd_nct1008");
+	pr_debug("%s: regulator vdd_nct1008 is %s\n", __func__,
+		regulator_is_enabled(reg) ? "enabled" : "disabled");
+	pr_debug("%s: enabling regulator vdd_nct1008\n", __func__);
+	regulator_enable(reg);
+	regulator_put(reg);
+	udelay(10);
+#endif
+
 	err = i2c_smbus_write_byte_data(client, CONFIG_WR,
 				  data->config & ~STANDBY_BIT);
 	if (err < 0)
@@ -489,6 +497,17 @@ static int nct1008_disable(struct i2c_client *client)
 
 	err = i2c_smbus_write_byte_data(client, CONFIG_WR,
 				  data->config | STANDBY_BIT);
+#ifdef CONFIG_MACH_SAMSUNG_VARIATION_TEGRA
+	struct regulator *reg = regulator_get(NULL, "vdd_nct1008");
+	pr_debug("%s: regulator vdd_nct1008 is %s\n", __func__,
+		regulator_is_enabled(reg) ? "enabled" : "disabled");
+	pr_debug("%s: disabling regulator vdd_nct1008\n", __func__);
+	regulator_disable(reg);
+	pr_debug("%s: regulator vdd_nct1008 is %s\n", __func__,
+		regulator_is_enabled(reg) ? "enabled" : "disabled");
+	regulator_put(reg);
+#endif
+
 	if (err < 0)
 		dev_err(&client->dev, "%s, line=%d, i2c write error=%d\n",
 		__func__, __LINE__, err);
@@ -545,7 +564,8 @@ static void nct1008_power_control(struct nct1008_data *data, bool is_enable)
 {
 	int ret;
 	if (!data->nct_reg) {
-		data->nct_reg = regulator_get(&data->client->dev, "vdd");
+//		data->nct_reg = regulator_get(&data->client->dev, "vdd");
+		data->nct_reg = regulator_get(&data->client->dev, "vdd_nct1008");
 		if (IS_ERR_OR_NULL(data->nct_reg)) {
 			if (PTR_ERR(data->nct_reg) == -ENODEV)
 				dev_info(&data->client->dev,
@@ -565,14 +585,12 @@ static void nct1008_power_control(struct nct1008_data *data, bool is_enable)
 		ret = regulator_disable(data->nct_reg);
 
 	if (ret < 0)
-		dev_err(&data->client->dev, "Error in %s rail vdd_nct%s, "
+		dev_err(&data->client->dev, "Error in %s rail vdd_nct1008, "
 			"error %d\n", (is_enable) ? "enabling" : "disabling",
-			(data->chip == NCT72) ? "72" : "1008",
 			ret);
 	else
-		dev_info(&data->client->dev, "success in %s rail vdd_nct%s\n",
-			(is_enable) ? "enabling" : "disabling",
-			(data->chip == NCT72) ? "72" : "1008");
+		dev_info(&data->client->dev, "success in %s rail vdd_nct1008\n",
+			(is_enable) ? "enabling" : "disabling");
 }
 
 static int __devinit nct1008_configure_sensor(struct nct1008_data* data)
@@ -696,8 +714,7 @@ error:
 
 static int __devinit nct1008_configure_irq(struct nct1008_data *data)
 {
-	data->workqueue = create_singlethread_workqueue((data->chip == NCT72) \
-							? "nct72" : "nct1008");
+	data->workqueue = create_singlethread_workqueue("nct1008");
 
 	INIT_WORK(&data->work, nct1008_work_func);
 
@@ -706,8 +723,7 @@ static int __devinit nct1008_configure_irq(struct nct1008_data *data)
 	else
 		return request_irq(data->client->irq, nct1008_irq,
 			IRQF_TRIGGER_LOW,
-			(data->chip == NCT72) ? "nct72" : "nct1008",
-			data);
+			DRIVER_NAME, data);
 }
 
 int nct1008_thermal_get_temp(struct nct1008_data *data, long *temp)
@@ -822,7 +838,6 @@ static int __devinit nct1008_probe(struct i2c_client *client,
 		return -ENOMEM;
 
 	data->client = client;
-	data->chip = id->driver_data;
 	memcpy(&data->plat_data, client->dev.platform_data,
 		sizeof(struct nct1008_platform_data));
 	i2c_set_clientdata(client, data);
@@ -918,15 +933,14 @@ static int nct1008_resume(struct i2c_client *client)
 #endif
 
 static const struct i2c_device_id nct1008_id[] = {
-	{ "nct1008", NCT1008 },
-	{ "nct72", NCT72},
-	{}
+	{ DRIVER_NAME, 0 },
+	{ }
 };
 MODULE_DEVICE_TABLE(i2c, nct1008_id);
 
 static struct i2c_driver nct1008_driver = {
 	.driver = {
-		.name	= "nct1008_nct72",
+		.name	= DRIVER_NAME,
 	},
 	.probe		= nct1008_probe,
 	.remove		= __devexit_p(nct1008_remove),
@@ -947,7 +961,7 @@ static void __exit nct1008_exit(void)
 	i2c_del_driver(&nct1008_driver);
 }
 
-MODULE_DESCRIPTION("Temperature sensor driver for OnSemi NCT1008/NCT72");
+MODULE_DESCRIPTION("Temperature sensor driver for OnSemi NCT1008");
 MODULE_LICENSE("GPL");
 
 module_init(nct1008_init);

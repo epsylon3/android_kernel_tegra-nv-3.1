@@ -320,13 +320,15 @@ asmlinkage void __cpuinit secondary_start_kernel(void)
 	 */
 	percpu_timer_setup();
 
-	while (!cpu_active(cpu))
+/*	while (!cpu_active(cpu))
 		cpu_relax();
-
+*/
 	/*
 	 * cpu_active bit is set, so it's safe to enalbe interrupts
 	 * now.
 	 */
+/*SNMC_p.chauhan*/
+
 	local_irq_enable();
 	local_fiq_enable();
 
@@ -678,6 +680,10 @@ void smp_send_stop(void)
 {
 	unsigned long timeout;
 
+#ifdef CONFIG_KERNEL_DEBUG_SEC
+	flush_all_cpu_caches();
+#endif
+
 	if (num_online_cpus() > 1) {
 		cpumask_t mask = cpu_online_map;
 		cpu_clear(smp_processor_id(), mask);
@@ -701,3 +707,13 @@ int setup_profiling_timer(unsigned int multiplier)
 {
 	return -EINVAL;
 }
+#ifdef CONFIG_KERNEL_DEBUG_SEC
+static void flush_all_cpu_cache(void *info)
+{
+	flush_cache_all();
+}
+void flush_all_cpu_caches(void)
+{
+	on_each_cpu(flush_all_cpu_cache, NULL, 1);
+}
+#endif

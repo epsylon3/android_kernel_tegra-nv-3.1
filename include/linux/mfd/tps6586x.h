@@ -104,6 +104,9 @@ struct tps6586x_rtc_platform_data {
 	int irq;
 	struct tps6586x_epoch_start start;
 	int cl_sel; /* internal XTAL capacitance, see TPS6586X_RTC_CL_SEL* */
+#ifdef CONFIG_MACH_SAMSUNG_VARIATION_TEGRA
+	int default_year; /* default year to be set when rtc resets */
+#endif
 };
 
 struct tps6586x_platform_data {
@@ -128,5 +131,15 @@ extern int tps6586x_set_bits(struct device *dev, int reg, uint8_t bit_mask);
 extern int tps6586x_clr_bits(struct device *dev, int reg, uint8_t bit_mask);
 extern int tps6586x_update(struct device *dev, int reg, uint8_t val,
 			   uint8_t mask);
+extern int tps6586x_power_off(void);
+
+#ifdef CONFIG_MACH_SAMSUNG_VARIATION_TEGRA
+extern int tps6586x_soft_rst(void);
+extern int tps6586x_rtc_save_time(void);
+#endif
+
+#ifdef CONFIG_TPS6586X_ADC
+extern int tps6586x_adc_read(u32 *mili_volt, u8 channel);
+#endif
 
 #endif /*__LINUX_MFD_TPS6586X_H */

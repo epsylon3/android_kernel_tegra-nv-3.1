@@ -117,8 +117,8 @@ static inline int regcache_lzo_get_blkpos(struct regmap *map,
 {
 	return (reg / map->reg_stride) %
 		    (DIV_ROUND_UP(map->cache_size_raw,
-				  regcache_lzo_block_count(map)) /
-		     map->cache_word_size);
+				   regcache_lzo_block_count(map)) /
+		      map->cache_word_size);
 }
 
 static inline int regcache_lzo_get_blksize(struct regmap *map)

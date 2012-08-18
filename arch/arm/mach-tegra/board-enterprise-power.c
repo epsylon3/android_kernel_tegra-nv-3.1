@@ -234,33 +234,33 @@ static struct regulator_consumer_supply tps80031_battery_charge_supply[] = {
 };
 
 #define TPS_PDATA_INIT(_id, _sname, _minmv, _maxmv, _supply_reg, _always_on,		\
-	_boot_on, _apply_uv, _init_uV, _init_enable, _init_apply,			\
-	_flags, _ectrl, _delay)								\
+	_boot_on, _apply_uv, _init_uV, _init_enable, _init_apply, 	\
+	_flags, _ectrl, _delay)						\
 	static struct tps80031_regulator_platform_data pdata_##_id##_##_sname = {	\
-		.regulator = {								\
-			.constraints = {						\
-				.min_uV = (_minmv)*1000,				\
-				.max_uV = (_maxmv)*1000,				\
-				.valid_modes_mask = (REGULATOR_MODE_NORMAL |		\
-						REGULATOR_MODE_STANDBY),		\
-				.valid_ops_mask = (REGULATOR_CHANGE_MODE |		\
-						REGULATOR_CHANGE_STATUS |		\
-						REGULATOR_CHANGE_VOLTAGE),		\
-				.always_on = _always_on,				\
-				.boot_on = _boot_on,					\
-				.apply_uV = _apply_uv,					\
-			},								\
-			.num_consumer_supplies =					\
+		.regulator = {						\
+			.constraints = {				\
+				.min_uV = (_minmv)*1000,		\
+				.max_uV = (_maxmv)*1000,		\
+				.valid_modes_mask = (REGULATOR_MODE_NORMAL |  \
+						REGULATOR_MODE_STANDBY),      \
+				.valid_ops_mask = (REGULATOR_CHANGE_MODE |    \
+						REGULATOR_CHANGE_STATUS |     \
+						REGULATOR_CHANGE_VOLTAGE),    \
+				.always_on = _always_on,		\
+				.boot_on = _boot_on,			\
+				.apply_uV = _apply_uv,			\
+			},						\
+			.num_consumer_supplies =			\
 				ARRAY_SIZE(tps80031_##_id##_supply_##_sname),		\
 			.consumer_supplies = tps80031_##_id##_supply_##_sname,		\
-			.supply_regulator = _supply_reg,				\
-		},									\
-		.init_uV =  _init_uV * 1000,						\
-		.init_enable = _init_enable,						\
-		.init_apply = _init_apply,						\
-		.flags = _flags,							\
-		.ext_ctrl_flag = _ectrl,						\
-		.delay_us = _delay,							\
+			.supply_regulator = _supply_reg,		\
+		},							\
+		.init_uV =  _init_uV * 1000,				\
+		.init_enable = _init_enable,				\
+		.init_apply = _init_apply,				\
+		.flags = _flags,					\
+		.ext_ctrl_flag = _ectrl,				\
+		.delay_us = _delay,					\
 	}
 
 TPS_PDATA_INIT(vio, a02,   600, 2100, 0, 1, 0, 0, -1, 0, 0, 0, 0, 0);
@@ -338,9 +338,9 @@ static struct tps80031_bg_platform_data battery_gauge_data = {
 	}
 
 #define TPS_REG(_id, _data, _sname)				\
-	{							\
-		.id	 = TPS80031_ID_##_id,			\
-		.name   = "tps80031-regulator",			\
+	{						\
+		.id	 = TPS80031_ID_##_id,		\
+		.name   = "tps80031-regulator",		\
 		.platform_data  = &pdata_##_data##_##_sname,	\
 	}
 #define TPS_BATTERY()					\
@@ -463,7 +463,7 @@ static struct regulator_consumer_supply fixed_reg_vdd_fuse_en_supply[] = {
 static struct regulator_consumer_supply gpio_reg_sdmmc3_vdd_sel_supply[] = {
 	REGULATOR_SUPPLY("vddio_sdmmc3_2v85_1v8", NULL),
 	REGULATOR_SUPPLY("sdmmc3_compu_pu", NULL),
-	REGULATOR_SUPPLY("vddio_sdmmc", "sdhci-tegra.2"),
+	REGULATOR_SUPPLY("vddio_sdmmc3", NULL),
 	REGULATOR_SUPPLY("vsys_3v7", NULL),
 };
 

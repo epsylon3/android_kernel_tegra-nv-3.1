@@ -51,10 +51,18 @@ obj-y				+= carma/
 obj-$(CONFIG_USB_SWITCH_FSA9480) += fsa9480.o
 obj-$(CONFIG_WL127X_RFKILL)	+= wl127x-rfkill.o
 obj-$(CONFIG_APANIC)		+= apanic.o
-obj-$(CONFIG_SENSORS_AK8975)	+= akm8975.o
 obj-$(CONFIG_SENSORS_NCT1008)	+= nct1008.o
 obj-$(CONFIG_BCM4329_RFKILL)	+= bcm4329_rfkill.o
-obj-$(CONFIG_INV_SENSORS)      += inv_mpu/
+obj-$(CONFIG_SAMSUNG_JACK)	+= sec_jack.o
 obj-$(CONFIG_TEGRA_CRYPTO_DEV)	+= tegra-cryptodev.o
 obj-$(CONFIG_TEGRA_BB_SUPPORT)	+= tegra-baseband/
 obj-$(CONFIG_MAX1749_VIBRATOR)	+= max1749.o
+obj-$(CONFIG_BCM4751_POWER)	+= bcm4751-power.o
+obj-$(CONFIG_BCM4751_RFKILL)	+= bcm4751-rfkill.o
+ifeq ($(CONFIG_MACH_SAMSUNG_P4LTE), y)
+obj-$(CONFIG_SEC_MISC)		+= sec_misc-p4lte.o
+else
+obj-$(CONFIG_SEC_MISC)		+= sec_misc.o
+endif
+obj-$(CONFIG_SEC_MISC)	+= stmpe811.o
+obj-$(CONFIG_SEC_MODEM)	+= modem_if/

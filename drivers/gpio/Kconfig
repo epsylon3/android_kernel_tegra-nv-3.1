@@ -289,6 +289,14 @@ config GPIO_STMPE
 	  This enables support for the GPIOs found on the STMPE I/O
 	  Expanders.
 
+config GPIO_STMPE1801
+	bool "STMPE1801 GPIOs"
+	depends on I2C
+	help
+	  This enables support for the GPIOs found on the STMPE1801 I/O
+	  Expanders.
+
+
 config GPIO_TC3589X
 	bool "TC3589X GPIOs"
 	depends on MFD_TC3589X

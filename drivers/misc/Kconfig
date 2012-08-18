@@ -392,14 +392,6 @@ config HMC6352
 	  This driver provides support for the Honeywell HMC6352 compass,
 	  providing configuration and heading data via sysfs.
 
-config SENSORS_AK8975
-	tristate "AK8975 compass support"
-	default n
-	depends on I2C
-	help
-	  If you say yes here you get support for Asahi Kasei's
-	  orientation sensor AK8975.
-
 config SENSORS_NCT1008
 	tristate "ON Semiconductor Temperature Sensor"
 	default n
@@ -543,11 +535,40 @@ config APANIC_PLABEL
 	 If your platform uses a different flash partition label for storing
  	 crashdumps, enter it here.
 
+config SEC_MISC
+	tristate "driver for miscellaneous functions for P3 devices"
+	help
+	  Enable this to be able to support miscellaneous functions for P3 devices
+	  - tuning image converters(CMC623), updating touch firmwares.
+
 config BCM4329_RFKILL
 	bool "Enable BCM4329 RFKILL driver"
 	default n
 	---help---
 	Adds BCM4329 RFKILL driver for Broadcom BCM4329 chipset
+
+config BCM4751_POWER
+	bool "BCM4751(GPS) power-control driver"
+	default n
+	help
+	  Adds to support power control of BCM4751 GPS module
+
+config BCM4751_RFKILL
+	bool "Enable BCM4751 RFKILL driver"
+	default n
+	---help---
+	 Adds BCM4751 RFKILL driver for Broadcom BCM4751 GPS module
+
+config SAMSUNG_JACK
+	bool "3.5MM ear jack driver for Samsung devices"
+	depends on INPUT
+	default n
+	---help---
+	 This is 3.5MM ear jack driver for Samsung devices.
+	 Please check configurations on board file,
+	 and you shoud check gpio_input driver is ready.
+
+	 If unsure, say N.
 
 config TEGRA_CRYPTO_DEV
 	bool "Device node to access tegra aes hardware"
@@ -569,7 +590,7 @@ source "drivers/misc/iwmc3200top/Kconfig"
 source "drivers/misc/ti-st/Kconfig"
 source "drivers/misc/lis3lv02d/Kconfig"
 source "drivers/misc/carma/Kconfig"
-source "drivers/misc/inv_mpu/Kconfig"
 source "drivers/misc/tegra-baseband/Kconfig"
+source "drivers/misc/modem_if/Kconfig"
 
 endif # MISC_DEVICES

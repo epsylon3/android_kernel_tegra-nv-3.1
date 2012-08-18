@@ -675,10 +675,10 @@ static void ep93xx_dma_tasklet(unsigned long data)
 	spin_lock_irq(&edmac->lock);
 	desc = ep93xx_dma_get_active(edmac);
 	if (desc) {
-		if (desc->complete) {
+	if (desc->complete) {
 			dma_cookie_complete(&desc->txd);
-			list_splice_init(&edmac->active, &list);
-		}
+		list_splice_init(&edmac->active, &list);
+	}
 		callback = desc->txd.callback;
 		callback_param = desc->txd.callback_param;
 	}

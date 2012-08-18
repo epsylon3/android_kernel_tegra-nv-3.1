@@ -53,7 +53,11 @@ obj-$(CONFIG_SPI_SH)			+= spi-sh.o
 obj-$(CONFIG_SPI_SH_MSIOF)		+= spi-sh-msiof.o
 obj-$(CONFIG_SPI_SH_SCI)		+= spi-sh-sci.o
 obj-$(CONFIG_SPI_STMP3XXX)		+= spi-stmp.o
+ifeq ($(CONFIG_MACH_SAMSUNG_P4LTE),y)
+obj-$(CONFIG_SPI_TEGRA)			+= spi_tegra_p4lte.o
+else
 obj-$(CONFIG_SPI_TEGRA)			+= spi-tegra.o
+endif
 obj-$(CONFIG_SPI_SLAVE_TEGRA)		+= spi_slave_tegra.o
 obj-$(CONFIG_SPI_TI_SSP)		+= spi-ti-ssp.o
 obj-$(CONFIG_SPI_TLE62X0)		+= spi-tle62x0.o

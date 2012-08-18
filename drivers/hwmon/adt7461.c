@@ -719,8 +719,8 @@ static int adt7461_remove(struct i2c_client *client)
 	struct adt7461_data *data = i2c_get_clientdata(client);
 
 	if (data->flags & ADT7461_FLAG_THERM2) {
-		free_irq(client->irq, data);
-		cancel_work_sync(&data->work);
+	free_irq(client->irq, data);
+	cancel_work_sync(&data->work);
 	}
 	if (gpio_is_valid(data->irq_gpio))
 		gpio_free(data->irq_gpio);

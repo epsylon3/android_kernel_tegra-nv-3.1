@@ -1352,6 +1352,7 @@ static void sdhci_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
 
 	if (host->version >= SDHCI_SPEC_300) {
 		u16 clk, ctrl_2;
+		unsigned int clock;
 
 		/* In case of UHS-I modes, set High Speed Enable */
 		if (((ios->timing == MMC_TIMING_UHS_SDR50) ||
@@ -1850,18 +1851,13 @@ int sdhci_enable(struct mmc_host *mmc)
 {
 	struct sdhci_host *host = mmc_priv(mmc);
 
-	if (!mmc->card)
+	if (!mmc->card || mmc->card->type == MMC_TYPE_SDIO)
 		return 0;
 
 	if (mmc->ios.clock) {
-		if (mmc->card->type != MMC_TYPE_SDIO) {
-			if (host->ops->set_clock)
-				host->ops->set_clock(host, mmc->ios.clock);
-			sdhci_set_clock(host, mmc->ios.clock);
-		} else {
-			if (host->ops->set_card_clock)
-				host->ops->set_card_clock(host, mmc->ios.clock);
-		}
+		if (host->ops->set_clock)
+			host->ops->set_clock(host, mmc->ios.clock);
+		sdhci_set_clock(host, mmc->ios.clock);
 	}
 
 	return 0;
@@ -1871,18 +1867,12 @@ int sdhci_disable(struct mmc_host *mmc, int lazy)
 {
 	struct sdhci_host *host = mmc_priv(mmc);
 
-	if (!mmc->card)
+	if (!mmc->card || mmc->card->type == MMC_TYPE_SDIO)
 		return 0;
 
-	/* For SDIO cards, only disable the card clock. */
-	if (mmc->card->type != MMC_TYPE_SDIO) {
-		sdhci_set_clock(host, 0);
-		if (host->ops->set_clock)
-			host->ops->set_clock(host, 0);
-	} else {
-		if (host->ops->set_card_clock)
-			host->ops->set_card_clock(host, 0);
-	}
+	sdhci_set_clock(host, 0);
+	if (host->ops->set_clock)
+		host->ops->set_clock(host, 0);
 
 	return 0;
 }
@@ -2063,8 +2053,14 @@ static void sdhci_cmd_irq(struct sdhci_host *host, u32 intmask)
 	if (intmask & SDHCI_INT_TIMEOUT)
 		host->cmd->error = -ETIMEDOUT;
 	else if (intmask & (SDHCI_INT_CRC | SDHCI_INT_END_BIT |
-			SDHCI_INT_INDEX))
+			SDHCI_INT_INDEX)) {
 		host->cmd->error = -EILSEQ;
+		if (host->instance == 3) {
+			printk(KERN_ERR"%s: cmd crc/cmd end bit/cmd index error int %#x\n",
+				mmc_hostname(host->mmc), intmask);
+			sdhci_dumpregs(host);
+		}
+	}
 
 	if (host->cmd->error) {
 		tasklet_schedule(&host->finish_tasklet);
@@ -2161,15 +2157,30 @@ static void sdhci_data_irq(struct sdhci_host *host, u32 intmask)
 		return;
 	}
 
-	if (intmask & SDHCI_INT_DATA_TIMEOUT)
+	if (intmask & SDHCI_INT_DATA_TIMEOUT) {
 		host->data->error = -ETIMEDOUT;
-	else if (intmask & SDHCI_INT_DATA_END_BIT)
+		if (host->instance == 3) {
+			printk(KERN_ERR"%s: data timeout error int\n",
+				mmc_hostname(host->mmc));
+			sdhci_dumpregs(host);
+		}
+	} else if (intmask & SDHCI_INT_DATA_END_BIT) {
 		host->data->error = -EILSEQ;
-	else if ((intmask & SDHCI_INT_DATA_CRC) &&
+		if (host->instance == 3) {
+			printk(KERN_ERR"%s: data end bit error int %#x\n",
+				mmc_hostname(host->mmc), intmask);
+			sdhci_dumpregs(host);
+		}
+	} else if ((intmask & SDHCI_INT_DATA_CRC) &&
 		SDHCI_GET_CMD(sdhci_readw(host, SDHCI_COMMAND))
-			!= MMC_BUS_TEST_R)
+			!= MMC_BUS_TEST_R) {
 		host->data->error = -EILSEQ;
-	else if (intmask & SDHCI_INT_ADMA_ERROR) {
+		if (host->instance == 3) {
+			printk(KERN_ERR"%s: data crc error int %#x\n",
+				mmc_hostname(host->mmc), intmask);
+			sdhci_dumpregs(host);
+		}
+	} else if (intmask & SDHCI_INT_ADMA_ERROR) {
 		printk(KERN_ERR "%s: ADMA error\n", mmc_hostname(host->mmc));
 		sdhci_show_adma_error(host);
 		host->data->error = -EIO;
@@ -2330,34 +2341,23 @@ out:
 int sdhci_suspend_host(struct sdhci_host *host, pm_message_t state)
 {
 	int ret = 0;
-	bool has_tuning_timer;
 	struct mmc_host *mmc = host->mmc;
 
 	sdhci_disable_card_detection(host);
 
 	/* Disable tuning since we are suspending */
-	has_tuning_timer = host->version >= SDHCI_SPEC_300 &&
-		host->tuning_count && host->tuning_mode == SDHCI_TUNING_MODE_1;
-	if (has_tuning_timer) {
+	if (host->version >= SDHCI_SPEC_300 && host->tuning_count &&
+	    host->tuning_mode == SDHCI_TUNING_MODE_1) {
 		host->flags &= ~SDHCI_NEEDS_RETUNING;
 		mod_timer(&host->tuning_timer, jiffies +
 			host->tuning_count * HZ);
 	}
 
-	if (mmc->card) {
+	if (host->mmc->card && host->mmc->card->type == MMC_TYPE_SDIO)
+		host->mmc->pm_flags |= MMC_PM_KEEP_POWER;
+
+	if (mmc->card)
 		ret = mmc_suspend_host(host->mmc);
-		if (ret) {
-			if (has_tuning_timer) {
-				host->flags |= SDHCI_NEEDS_RETUNING;
-				mod_timer(&host->tuning_timer, jiffies +
-						host->tuning_count * HZ);
-			}
-
-			sdhci_enable_card_detection(host);
-
-			return ret;
-		}
-	}
 
 	if (mmc->pm_flags & MMC_PM_KEEP_POWER)
 		host->card_int_set = sdhci_readl(host, SDHCI_INT_ENABLE) &
@@ -2400,12 +2400,18 @@ int sdhci_resume_host(struct sdhci_host *host)
 	mmiowb();
 
 	if (mmc->card) {
-		ret = mmc_resume_host(host->mmc);
-		/* Enable card interrupt as it is overwritten in sdhci_init */
-		if ((mmc->caps & MMC_CAP_SDIO_IRQ) &&
-			(mmc->pm_flags & MMC_PM_KEEP_POWER))
-				if (host->card_int_set)
-					mmc->ops->enable_sdio_irq(mmc, true);
+		if (mmc->card->type != MMC_TYPE_SDIO) {
+			ret = mmc_resume_host(host->mmc);
+		} else {
+			ret = mmc_resume_host(host->mmc);
+			/* Enable card interrupt as
+				it is overwritten in sdhci_init */
+			if ((mmc->caps & MMC_CAP_SDIO_IRQ) &&
+				(mmc->pm_flags & MMC_PM_KEEP_POWER))
+					if (host->card_int_set)
+						mmc->ops->enable_sdio_irq(mmc,
+							true);
+		}
 	}
 
 	sdhci_enable_card_detection(host);

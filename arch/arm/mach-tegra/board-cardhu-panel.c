@@ -30,7 +30,7 @@
 #include <linux/pwm_backlight.h>
 #include <asm/atomic.h>
 #include <linux/nvhost.h>
-#include <linux/nvmap.h>
+#include <mach/nvmap.h>
 #include <mach/irqs.h>
 #include <mach/iomap.h>
 #include <mach/dc.h>
@@ -58,7 +58,7 @@
 #define pm313_MODE0			TEGRA_GPIO_PZ4
 #define pm313_MODE1			TEGRA_GPIO_PW1
 #define pm313_BPP			TEGRA_GPIO_PN6 /* 0:24bpp, 1:18bpp */
-#define pm313_lvds_shutdown		TEGRA_GPIO_PL2
+#define pm313_lvds_shutdown		TEGRA_GPIO_PH1
 
 /* E1247 reworked for pm269 pins */
 #define e1247_pm269_lvds_shutdown	TEGRA_GPIO_PN6
@@ -302,7 +302,7 @@ static int cardhu_panel_enable(void)
 		cardhu_lvds_reg = regulator_get(NULL, "vdd_lvds");
 		if (WARN_ON(IS_ERR(cardhu_lvds_reg)))
 			pr_err("%s: couldn't get regulator vdd_lvds: %ld\n",
-				__func__, PTR_ERR(cardhu_lvds_reg));
+			       __func__, PTR_ERR(cardhu_lvds_reg));
 		else
 			regulator_enable(cardhu_lvds_reg);
 	}
@@ -311,7 +311,7 @@ static int cardhu_panel_enable(void)
 		cardhu_lvds_vdd_bl = regulator_get(NULL, "vdd_backlight");
 		if (WARN_ON(IS_ERR(cardhu_lvds_vdd_bl)))
 			pr_err("%s: couldn't get regulator vdd_backlight: %ld\n",
-				__func__, PTR_ERR(cardhu_lvds_vdd_bl));
+			       __func__, PTR_ERR(cardhu_lvds_vdd_bl));
 		else
 			regulator_enable(cardhu_lvds_vdd_bl);
 	}
@@ -320,7 +320,7 @@ static int cardhu_panel_enable(void)
 		cardhu_lvds_vdd_panel = regulator_get(NULL, "vdd_lcd_panel");
 		if (WARN_ON(IS_ERR(cardhu_lvds_vdd_panel)))
 			pr_err("%s: couldn't get regulator vdd_lcd_panel: %ld\n",
-				__func__, PTR_ERR(cardhu_lvds_vdd_panel));
+			       __func__, PTR_ERR(cardhu_lvds_vdd_panel));
 		else
 			regulator_enable(cardhu_lvds_vdd_panel);
 	}
@@ -707,8 +707,8 @@ static struct tegra_fb_data cardhu_fb_data = {
 
 static struct tegra_fb_data cardhu_hdmi_fb_data = {
 	.win		= 0,
-	.xres		= 640,
-	.yres		= 480,
+	.xres		= 1366,
+	.yres		= 768,
 	.bits_per_pixel	= 32,
 	.flags		= TEGRA_FB_FLIP_ON_PROBE,
 };
@@ -749,7 +749,7 @@ static int cardhu_dsi_panel_enable(void)
 	if (cardhu_dsi_reg == NULL) {
 		cardhu_dsi_reg = regulator_get(NULL, "avdd_dsi_csi");
 		if (IS_ERR_OR_NULL(cardhu_dsi_reg)) {
-			pr_err("dsi: Could not get regulator avdd_dsi_csi\n");
+		pr_err("dsi: Could not get regulator avdd_dsi_csi\n");
 			cardhu_dsi_reg = NULL;
 			return PTR_ERR(cardhu_dsi_reg);
 		}
@@ -798,7 +798,7 @@ static int cardhu_dsi_panel_enable(void)
 #if DSI_PANEL_RESET
 #if DSI_PANEL_218
 	ret = gpio_request(cardhu_dsi_218_panel_reset, "dsi_panel_reset");
-	if (ret < 0) {
+	if (ret < 0){
 		return ret;
 	}
 	ret = gpio_direction_output(cardhu_dsi_218_panel_reset, 0);
@@ -889,7 +889,7 @@ static int cardhu_dsi_panel_postsuspend(void)
 	return err;
 }
 
-static struct tegra_dsi_cmd dsi_init_cmd[] = {
+static struct tegra_dsi_cmd dsi_init_cmd[]= {
 	DSI_CMD_SHORT(0x05, 0x11, 0x00),
 	DSI_DLY_MS(150),
 	DSI_CMD_SHORT(0x05, 0x29, 0x00),
@@ -995,16 +995,16 @@ static struct tegra_dc_out cardhu_disp1_out = {
 	.depth		= 18,
 	.dither		= TEGRA_DC_ORDERED_DITHER,
 
-	.modes		= cardhu_panel_modes,
-	.n_modes	= ARRAY_SIZE(cardhu_panel_modes),
+	.modes	 	= cardhu_panel_modes,
+	.n_modes 	= ARRAY_SIZE(cardhu_panel_modes),
 
 	.enable		= cardhu_panel_enable,
 	.disable	= cardhu_panel_disable,
 #else
 	.type		= TEGRA_DC_OUT_DSI,
 
-	.modes		= cardhu_dsi_modes,
-	.n_modes	= ARRAY_SIZE(cardhu_dsi_modes),
+	.modes	 	= cardhu_dsi_modes,
+	.n_modes 	= ARRAY_SIZE(cardhu_dsi_modes),
 
 	.dsi		= &cardhu_dsi,
 
@@ -1301,11 +1301,6 @@ int __init cardhu_panel_init(void)
 					 IORESOURCE_MEM, "fbmem");
 	res->start = tegra_fb2_start;
 	res->end = tegra_fb2_start + tegra_fb2_size - 1;
-
-	/* Copy the bootloader fb to the fb2. */
-	tegra_move_framebuffer(tegra_fb2_start, tegra_bootloader_fb_start,
-				min(tegra_fb2_size, tegra_bootloader_fb_size));
-
 	if (!err)
 		err = nvhost_device_register(&cardhu_disp2_device);
 #endif

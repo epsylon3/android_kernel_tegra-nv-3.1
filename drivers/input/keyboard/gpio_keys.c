@@ -326,6 +326,28 @@ static struct attribute_group gpio_keys_attr_group = {
 	.attrs = gpio_keys_attrs,
 };
 
+#ifdef CONFIG_SAMSUNG_INPUT
+/* For checking H/W faulty. */
+static ssize_t keyshort_test(struct device *dev,
+	struct device_attribute *attr, char *buf)
+{
+	int i, ret = 0;
+	int count = 0;
+	struct gpio_keys_platform_data *pdata = dev->platform_data;
+
+	for (i = 0; i < pdata->nbuttons; i++) {
+		struct gpio_keys_button *button = &pdata->buttons[i];
+		if (gpio_get_value(button->gpio))
+			count++;
+	}
+
+	ret = sprintf(buf, "%d\n", count);
+	return ret;
+}
+static DEVICE_ATTR(gpiokey_pressed,
+	S_IRUGO, keyshort_test, NULL);
+#endif
+
 static void gpio_keys_gpio_report_event(struct gpio_button_data *bdata)
 {
 	const struct gpio_keys_button *button = bdata->button;
@@ -436,38 +458,38 @@ static int __devinit gpio_keys_setup_key(struct platform_device *pdev,
 
 	if (gpio_is_valid(button->gpio)) {
 
-		error = gpio_request(button->gpio, desc);
-		if (error < 0) {
+	error = gpio_request(button->gpio, desc);
+	if (error < 0) {
 			dev_err(dev, "Failed to request GPIO %d, error %d\n",
-				button->gpio, error);
+			button->gpio, error);
 			return error;
-		}
+	}
 
-		error = gpio_direction_input(button->gpio);
-		if (error < 0) {
+	error = gpio_direction_input(button->gpio);
+	if (error < 0) {
 			dev_err(dev,
 				"Failed to configure direction for GPIO %d, error %d\n",
-				button->gpio, error);
+			button->gpio, error);
 			goto fail;
-		}
+	}
 
-		if (button->debounce_interval) {
-			error = gpio_set_debounce(button->gpio,
-					button->debounce_interval * 1000);
-			/* use timer if gpiolib doesn't provide debounce */
-			if (error < 0)
+	if (button->debounce_interval) {
+		error = gpio_set_debounce(button->gpio,
+					  button->debounce_interval * 1000);
+		/* use timer if gpiolib doesn't provide debounce */
+		if (error < 0)
 				bdata->timer_debounce =
 						button->debounce_interval;
-		}
+	}
 
-		irq = gpio_to_irq(button->gpio);
-		if (irq < 0) {
-			error = irq;
+	irq = gpio_to_irq(button->gpio);
+	if (irq < 0) {
+		error = irq;
 			dev_err(dev,
 				"Unable to get irq number for GPIO %d, error %d\n",
-				button->gpio, error);
+			button->gpio, error);
 			goto fail;
-		}
+	}
 		bdata->irq = irq;
 
 		INIT_WORK(&bdata->work, gpio_keys_gpio_work_func);
@@ -475,8 +497,10 @@ static int __devinit gpio_keys_setup_key(struct platform_device *pdev,
 			    gpio_keys_gpio_timer, (unsigned long)bdata);
 
 		isr = gpio_keys_gpio_isr;
-		irqflags = IRQF_TRIGGER_RISING | IRQF_TRIGGER_FALLING;
-
+	irqflags = IRQF_TRIGGER_RISING | IRQF_TRIGGER_FALLING;
+#ifdef CONFIG_SAMSUNG_INPUT
+	irqflags |= IRQF_NO_SUSPEND;
+#endif
 	} else {
 		if (!button->irq) {
 			dev_err(dev, "No IRQ specified\n");
@@ -517,7 +541,7 @@ static int __devinit gpio_keys_setup_key(struct platform_device *pdev,
 
 fail:
 	if (gpio_is_valid(button->gpio))
-		gpio_free(button->gpio);
+	gpio_free(button->gpio);
 
 	return error;
 }
@@ -682,7 +706,11 @@ static int __devinit gpio_keys_probe(struct platform_device *pdev)
 	platform_set_drvdata(pdev, ddata);
 	input_set_drvdata(input, ddata);
 
+#ifdef CONFIG_SAMSUNG_INPUT
+	input->name = "sec_power_key";
+#else
 	input->name = pdata->name ? : pdev->name;
+#endif
 	input->phys = "gpio-keys/input0";
 	input->dev.parent = &pdev->dev;
 	input->open = gpio_keys_open;
@@ -709,6 +737,10 @@ static int __devinit gpio_keys_probe(struct platform_device *pdev)
 			wakeup = 1;
 	}
 
+#ifdef CONFIG_SAMSUNG_INPUT
+	input_set_capability(input, EV_KEY, KEY_WAKEUP);
+#endif
+
 	error = sysfs_create_group(&pdev->dev.kobj, &gpio_keys_attr_group);
 	if (error) {
 		dev_err(dev, "Unable to export keys/switches, error: %d\n",
@@ -732,6 +764,13 @@ static int __devinit gpio_keys_probe(struct platform_device *pdev)
 	input_sync(input);
 
 	device_init_wakeup(&pdev->dev, wakeup);
+
+#ifdef CONFIG_SAMSUNG_INPUT
+	/* For checking H/W faulty. */
+	if (device_create_file(&pdev->dev, &dev_attr_gpiokey_pressed) < 0)
+		pr_err("Failed to create device file(%s)!\n",
+			dev_attr_gpiokey_pressed.attr.name);
+#endif
 
 	return 0;
 
@@ -814,12 +853,32 @@ static int gpio_keys_resume(struct device *dev)
 			disable_irq_wake(bdata->irq);
 			if (wakeup_key == bdata->button->code) {
 				unsigned int type = bdata->button->type ?: EV_KEY;
-
+#ifdef CONFIG_SAMSUNG_INPUT
+				input_event(ddata->input, type, KEY_WAKEUP, 1);
+				input_event(ddata->input, type, KEY_WAKEUP, 0);
+				input_sync(ddata->input);
+#else
 				input_event(ddata->input, type, bdata->button->code, 1);
 				input_event(ddata->input, type, bdata->button->code, 0);
 				input_sync(ddata->input);
+#endif
 			}
 		}
+
+#ifdef CONFIG_SAMSUNG_LPM_MODE
+		if (pdata->check_lpm) {
+			if (pdata->check_lpm() &&
+				bdata->button->code == KEY_POWER) {
+				mod_timer(&ddata->data[i].timer,
+				jiffies + msecs_to_jiffies(1500));
+			}
+		} else {
+			gpio_keys_gpio_report_event(&ddata->data[i]);
+		}
+
+#else
+		gpio_keys_gpio_report_event(&ddata->data[i]);
+#endif
 
 		if (gpio_is_valid(bdata->button->gpio))
 			gpio_keys_gpio_report_event(bdata);
@@ -832,9 +891,29 @@ static int gpio_keys_resume(struct device *dev)
 
 static SIMPLE_DEV_PM_OPS(gpio_keys_pm_ops, gpio_keys_suspend, gpio_keys_resume);
 
+#ifdef CONFIG_SAMSUNG_INPUT
+static void gpio_keys_shutdown(struct platform_device *pdev)
+{
+	struct gpio_keys_drvdata *ddata = platform_get_drvdata(pdev);
+	struct gpio_keys_platform_data *pdata = pdev->dev.platform_data;
+	int i;
+
+	for (i = 0; i < pdata->nbuttons; i++) {
+		struct gpio_keys_button *button = &pdata->buttons[i];
+		int irq = gpio_to_irq(button->gpio);
+		disable_irq(irq);
+		free_irq(irq, &ddata->data[i]);
+		gpio_free(button->gpio);
+	}
+}
+#endif
+
 static struct platform_driver gpio_keys_device_driver = {
 	.probe		= gpio_keys_probe,
 	.remove		= __devexit_p(gpio_keys_remove),
+#ifdef CONFIG_SAMSUNG_INPUT
+	.shutdown	= gpio_keys_shutdown,
+#endif
 	.driver		= {
 		.name	= "gpio-keys",
 		.owner	= THIS_MODULE,

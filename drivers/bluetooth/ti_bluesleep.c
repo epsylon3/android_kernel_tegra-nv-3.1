@@ -88,7 +88,7 @@ static irqreturn_t bluesleep_hostwake_isr(int irq, void *dev_id)
  * @return On success, 0. On error, -1, and <code>errno</code> is set
  * appropriately.
  */
-int bluesleep_start(struct uart_port *uport)
+  int bluesleep_start(struct uart_port *uport)
 {
 	int retval;
 	bsi->uport = uport;
@@ -128,7 +128,7 @@ fail:
 /**
  * Stops the Sleep-Mode Protocol on the Host.
  */
-void bluesleep_stop(void)
+  void bluesleep_stop(void)
 {
 	pr_debug("%s", __func__);
 

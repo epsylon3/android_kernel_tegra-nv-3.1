@@ -458,9 +458,9 @@ u32 tf_get_l2_descriptor_common(u32 vaddr, struct mm_struct *mm)
 			 * Have to jump to hwpte see include/asm/pgtable.h
 			 */
 #ifdef PTE_HWTABLE_SIZE
-			hwpte = (u32 *) (ptep + PTE_HWTABLE_PTRS);
+			hwpte = (u32 *) (ptep+PTE_HWTABLE_PTRS);
 #else
-			hwpte = (u32 *) (ptep - PTRS_PER_PTE);
+			hwpte = (u32 *) (ptep-PTRS_PER_PTE);
 #endif
 			if (((*hwpte) & L2_DESCRIPTOR_ADDR_MASK) !=
 					((*ptep) & L2_DESCRIPTOR_ADDR_MASK))

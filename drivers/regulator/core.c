@@ -1482,6 +1482,9 @@ int regulator_enable(struct regulator *regulator)
 	struct regulator_dev *rdev = regulator->rdev;
 	int ret = 0;
 
+	if (strncmp(rdev_get_name(rdev), "REG-LDO_5", 9) == 0)
+		printk(KERN_WARNING "** REG-LDO_5 enabled\n");
+
 	if (rdev->supply) {
 		ret = regulator_enable(rdev->supply);
 		if (ret != 0)
@@ -1559,6 +1562,9 @@ int regulator_disable(struct regulator *regulator)
 {
 	struct regulator_dev *rdev = regulator->rdev;
 	int ret = 0;
+
+	if (strncmp(rdev_get_name(rdev), "REG-LDO_5", 9) == 0)
+		printk(KERN_WARNING "** REG-LDO_5 disabled\n");
 
 	mutex_lock(&rdev->mutex);
 	ret = _regulator_disable(rdev);

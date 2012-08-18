@@ -279,7 +279,7 @@ int tegra_pcm_trigger(struct snd_pcm_substream *substream, int cmd)
 		prtd->running = 1;
 		spin_unlock_irqrestore(&prtd->lock, flags);
 		for (i = 0; i < prtd->dma_req_count; i++)
-			tegra_pcm_queue_dma(prtd);
+		tegra_pcm_queue_dma(prtd);
 		break;
 	case SNDRV_PCM_TRIGGER_STOP:
 	case SNDRV_PCM_TRIGGER_SUSPEND:
@@ -425,7 +425,7 @@ void tegra_pcm_free(struct snd_pcm *pcm)
 
 static int tegra_pcm_probe(struct snd_soc_platform *platform)
 {
-	if(machine_is_kai() || machine_is_tegra_enterprise())
+	if(machine_is_kai())
 		platform->dapm.idle_bias_off = 1;
 
 	return 0;

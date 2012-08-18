@@ -487,7 +487,7 @@ static int tegra_wm8903_event_ext_mic(struct snd_soc_dapm_widget *w,
 static const struct snd_soc_dapm_widget cardhu_dapm_widgets[] = {
 	SND_SOC_DAPM_SPK("Int Spk", tegra_wm8903_event_int_spk),
 	SND_SOC_DAPM_HP("Headphone Jack", tegra_wm8903_event_hp),
-	SND_SOC_DAPM_LINE("LineOut", NULL),
+	SND_SOC_DAPM_LINE("Line Out", NULL),
 	SND_SOC_DAPM_MIC("Mic Jack", tegra_wm8903_event_ext_mic),
 	SND_SOC_DAPM_MIC("Int Mic", tegra_wm8903_event_int_mic),
 	SND_SOC_DAPM_LINE("Line In", NULL),
@@ -517,8 +517,8 @@ static const struct snd_soc_dapm_route cardhu_audio_map[] = {
 	{"Int Spk", NULL, "RON"},
 	{"Int Spk", NULL, "LOP"},
 	{"Int Spk", NULL, "LON"},
-	{"LineOut", NULL, "LINEOUTL"},
-	{"LineOut", NULL, "LINEOUTR"},
+	{"Line Out", NULL, "LINEOUTL"},
+	{"Line Out", NULL, "LINEOUTR"},
 	{"Mic Bias", NULL, "Mic Jack"},
 	{"IN1L", NULL, "Mic Bias"},
 	{"Mic Bias", NULL, "Int Mic"},
@@ -565,7 +565,7 @@ static const struct snd_kcontrol_new cardhu_controls[] = {
 	SOC_DAPM_PIN_SWITCH("LineOut"),
 	SOC_DAPM_PIN_SWITCH("Mic Jack"),
 	SOC_DAPM_PIN_SWITCH("Int Mic"),
-	SOC_DAPM_PIN_SWITCH("Line In"),
+	SOC_DAPM_PIN_SWITCH("LineIn"),
 };
 
 static const struct snd_kcontrol_new tegra_wm8903_default_controls[] = {
@@ -729,6 +729,7 @@ static struct snd_soc_dai_link tegra_wm8903_dai[] = {
 		.init = tegra_wm8903_init,
 		.ops = &tegra_wm8903_ops,
 	},
+/*
 	{
 		.name = "SPDIF",
 		.stream_name = "SPDIF PCM",
@@ -738,6 +739,7 @@ static struct snd_soc_dai_link tegra_wm8903_dai[] = {
 		.codec_dai_name = "dit-hifi",
 		.ops = &tegra_spdif_ops,
 	},
+*/
 	{
 		.name = "BT-SCO",
 		.stream_name = "BT SCO PCM",
@@ -810,20 +812,20 @@ static __devinit int tegra_wm8903_driver_probe(struct platform_device *pdev)
 		goto err_free_machine;
 
 	if (machine_is_cardhu() || machine_is_ventana()) {
-		machine->spk_reg = regulator_get(&pdev->dev, "vdd_spk_amp");
-		if (IS_ERR(machine->spk_reg)) {
-			dev_info(&pdev->dev, "No speaker regulator found\n");
-			machine->spk_reg = 0;
-		}
+	machine->spk_reg = regulator_get(&pdev->dev, "vdd_spk_amp");
+	if (IS_ERR(machine->spk_reg)) {
+		dev_info(&pdev->dev, "No speaker regulator found\n");
+		machine->spk_reg = 0;
+	}
 	}
 
 	if (machine_is_ventana()) {
-		machine->dmic_reg = regulator_get(&pdev->dev, "vdd_dmic");
-		if (IS_ERR(machine->dmic_reg)) {
+	machine->dmic_reg = regulator_get(&pdev->dev, "vdd_dmic");
+	if (IS_ERR(machine->dmic_reg)) {
 			dev_info(&pdev->dev, "No digital mic"
 						" regulator found\n");
-			machine->dmic_reg = 0;
-		}
+		machine->dmic_reg = 0;
+	}
 	}
 
 	if (machine_is_cardhu()) {

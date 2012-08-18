@@ -469,11 +469,14 @@ SYSCALL_DEFINE4(reboot, int, magic1, int, magic2, unsigned int, cmd,
 		panic("cannot halt");
 
 	case LINUX_REBOOT_CMD_POWER_OFF:
+		/* For debugging. */
+		printk(KERN_EMERG "LINUX_REBOOT_CMD_POWER_OFF\n");
 		kernel_power_off();
 		do_exit(0);
 		break;
 
 	case LINUX_REBOOT_CMD_RESTART2:
+		printk(KERN_EMERG "LINUX_REBOOT_CMD_RESTART2\n");
 		if (strncpy_from_user(&buffer[0], arg, sizeof(buffer) - 1) < 0) {
 			ret = -EFAULT;
 			break;

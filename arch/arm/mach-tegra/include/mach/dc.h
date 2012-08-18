@@ -82,11 +82,11 @@ struct tegra_dsi_cmd {
 	union {
 		u16 data_len;
 		u16 delay_ms;
-		struct {
+		struct{
 			u8 data0;
 			u8 data1;
-		} sp;
-	} sp_len_dly;
+		}sp;
+	}sp_len_dly;
 	u8	*pdata;
 };
 
@@ -141,16 +141,16 @@ struct tegra_dsi_out {
 
 	bool		panel_has_frame_buffer;	/* required*/
 
-	struct tegra_dsi_cmd	*dsi_init_cmd;		/* required */
+	struct tegra_dsi_cmd*	dsi_init_cmd;		/* required */
 	u16		n_init_cmd;			/* required */
 
-	struct tegra_dsi_cmd	*dsi_early_suspend_cmd;
+	struct tegra_dsi_cmd*	dsi_early_suspend_cmd;
 	u16		n_early_suspend_cmd;
 
-	struct tegra_dsi_cmd	*dsi_late_resume_cmd;
+	struct tegra_dsi_cmd*	dsi_late_resume_cmd;
 	u16		n_late_resume_cmd;
 
-	struct tegra_dsi_cmd	*dsi_suspend_cmd;	/* required */
+	struct tegra_dsi_cmd*	dsi_suspend_cmd;	/* required */
 	u16		n_suspend_cmd;			/* required */
 
 	u8		video_data_type;		/* required */
@@ -426,7 +426,6 @@ struct tegra_dc_win {
 	unsigned		out_w;
 	unsigned		out_h;
 	unsigned		z;
-	u8			global_alpha;
 
 	struct tegra_dc_csc	csc;
 
@@ -503,7 +502,6 @@ struct tegra_dc_platform_data {
 
 #define TEGRA_DC_FLAG_ENABLED		(1 << 0)
 
-int tegra_dc_get_stride(struct tegra_dc *dc, unsigned win);
 struct tegra_dc *tegra_dc_get_dc(unsigned idx);
 struct tegra_dc_win *tegra_dc_get_window(struct tegra_dc *dc, unsigned win);
 bool tegra_dc_get_connected(struct tegra_dc *);

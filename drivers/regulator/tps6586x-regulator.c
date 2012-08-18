@@ -229,12 +229,21 @@ static int tps6586x_ldo4_voltages[] = {
 	2300, 2325, 2350, 2375, 2400, 2425, 2450, 2475,
 };
 
+#ifdef CONFIG_MACH_SAMSUNG_VARIATION_TEGRA
+static int tps6586x_sm2_voltages[] = {
+	1700, 1725, 1750, 1775, 1800, 1825, 1850, 1875,
+	1900, 1925, 1950, 1975, 2000, 2025, 2050, 2075,
+	2100, 2125, 2150, 2175, 2200, 2225, 2250, 2275,
+	2300, 2325, 2350, 2375, 2400, 2425, 2450, 2475,
+};
+#else
 static int tps6586x_sm2_voltages[] = {
 	3000, 3050, 3100, 3150, 3200, 3250, 3300, 3350,
 	3400, 3450, 3500, 3550, 3600, 3650, 3700, 3750,
 	3800, 3850, 3900, 3950, 4000, 4050, 4100, 4150,
 	4200, 4250, 4300, 4350, 4400, 4450, 4500, 4550,
 };
+#endif
 
 static int tps6586x_dvm_voltages[] = {
 	 725,  750,  775,  800,  825,  850,  875,  900,
@@ -310,6 +319,22 @@ static inline int tps6586x_regulator_preinit(struct device *parent,
 {
 	uint8_t val1, val2;
 	int ret;
+
+#ifdef CONFIG_MACH_SAMSUNG_VARIATION_TEGRA
+	/*
+	 * set SM0V1 : 1.325V --> 1.2V
+	 * because the default TPS6586X SM0V1[0x26]:1.325V,
+	 * SM0V2:1.2V, but SM0 voltage selector points SM0V1
+	 * our spec of v_core : 1.2V
+	 */
+
+	if (ri->desc.id == TPS6586X_ID_SM_0) {
+		int ret;
+		ret = tps6586x_write(parent, TPS6586X_SM0V1, 0x13);
+		if (ret)
+			return ret;
+	}
+#endif
 
 	if (ri->enable_reg[0] == ri->enable_reg[1] &&
 	    ri->enable_bit[0] == ri->enable_bit[1])

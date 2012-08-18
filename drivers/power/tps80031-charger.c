@@ -106,7 +106,7 @@ static int set_charge_current_limit(struct regulator_dev *rdev,
 	if (max_vbus_current)
 		max_vbus_current--;
 	ret = tps80031_update(charger->dev->parent, SLAVE_ID2,
-			CHARGERUSB_CINLIMIT,
+				CHARGERUSB_CINLIMIT,
 			charging_current_val_code[max_vbus_current], 0x3F);
 	if (ret < 0) {
 		dev_err(charger->dev, "%s(): Failed in writing register 0x%02x\n",

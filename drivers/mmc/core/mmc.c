@@ -279,8 +279,16 @@ static int mmc_read_ext_csd(struct mmc_card *card, u8 *ext_csd)
 			ext_csd[EXT_CSD_SEC_CNT + 3] << 24;
 
 		/* Cards with density > 2GiB are sector addressed */
-		if (card->ext_csd.sectors > (2u * 1024 * 1024 * 1024) / 512)
+		if (card->ext_csd.sectors > (2u * 1024 * 1024 * 1024) / 512) {
+
+			unsigned boot_sectors;
+
+			boot_sectors = ext_csd[EXT_CSD_BOOT_MULT] * 512;
+			card->ext_csd.sectors -= boot_sectors;
+
 			mmc_card_set_blockaddr(card);
+
+		}
 	}
 	card->ext_csd.raw_card_type = ext_csd[EXT_CSD_CARD_TYPE];
 	switch (ext_csd[EXT_CSD_CARD_TYPE] & EXT_CSD_CARD_TYPE_MASK) {
@@ -961,8 +969,17 @@ static int mmc_suspend(struct mmc_host *host)
 	BUG_ON(!host->card);
 
 	mmc_claim_host(host);
-	if (!mmc_host_is_spi(host))
-		mmc_deselect_cards(host);
+	if (!mmc_host_is_spi(host)) {
+#ifdef CONFIG_MACH_SAMSUNG_VARIATION_TEGRA
+		if (host->card->cid.manfid == 0x15
+			&& host->card->ext_csd.sectors > 40000000)
+			mmc_card_sleepawake(host, 1);
+		else
+			mmc_deselect_cards(host);
+#else
+			mmc_deselect_cards(host);
+#endif
+	}
 	host->card->state &= ~MMC_STATE_HIGHSPEED;
 	mmc_release_host(host);
 

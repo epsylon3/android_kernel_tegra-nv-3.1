@@ -45,7 +45,7 @@
 #include "t30/t30.h"
 #include "bus_client.h"
 #include "nvhost_acm.h"
-#include <linux/nvmap.h>
+#include <mach/nvmap.h>
 #include "nvhost_channel.h"
 #include "nvhost_job.h"
 
@@ -178,7 +178,7 @@ static int match_by_moduleid(struct device *dev, void *data)
 static struct nvhost_device *get_ndev_by_moduleid(struct nvhost_master *host,
 		u32 id)
 {
-	struct device *dev = bus_find_device(&nvhost_bus_inst->nvhost_bus_type, NULL, (void *)id,
+	struct device *dev = bus_find_device(&nvhost_bus_type, NULL, (void *)id,
 			match_by_moduleid);
 
 	return dev ? to_nvhost_device(dev) : NULL;
@@ -352,40 +352,45 @@ fail:
 
 struct nvhost_device *nvhost_get_device(char *name)
 {
-	BUG_ON(!host_device_op().get_nvhost_device);
-	return host_device_op().get_nvhost_device(name);
+	BUG_ON(!host_device_op(nvhost).get_nvhost_device);
+	return host_device_op(nvhost).get_nvhost_device(nvhost, name);
 }
 
-struct nvhost_channel *nvhost_alloc_channel(int index)
+static void nvhost_remove_chip_support(struct nvhost_master *host)
 {
-	BUG_ON(!host_device_op().alloc_nvhost_channel);
-	return host_device_op().alloc_nvhost_channel(index);
-}
+	kfree(host->channels);
+	host->channels = 0;
 
-void nvhost_free_channel(struct nvhost_channel *ch)
-{
-	BUG_ON(!host_device_op().free_nvhost_channel);
-	host_device_op().free_nvhost_channel(ch);
-}
-
-static void nvhost_free_resources(struct nvhost_master *host)
-{
 	kfree(host->intr.syncpt);
 	host->intr.syncpt = 0;
 }
 
-static int __devinit nvhost_alloc_resources(struct nvhost_master *host)
+static int __devinit nvhost_init_chip_support(struct nvhost_master *host)
 {
 	int err;
+	switch (tegra_get_chipid()) {
+	case TEGRA_CHIPID_TEGRA2:
+		err = nvhost_init_t20_support(host);
+		break;
 
-	err = nvhost_init_chip_support(host);
+	case TEGRA_CHIPID_TEGRA3:
+		err = nvhost_init_t30_support(host);
+		break;
+	default:
+		return -ENODEV;
+	}
+
 	if (err)
 		return err;
+
+	/* allocate items sized in chip specific support init */
+	host->channels = kzalloc(sizeof(struct nvhost_channel) *
+				 host->nb_channels, GFP_KERNEL);
 
 	host->intr.syncpt = kzalloc(sizeof(struct nvhost_intr_syncpt) *
 				    host->syncpt.nb_pts, GFP_KERNEL);
 
-	if (!host->intr.syncpt) {
+	if (!(host->channels && host->intr.syncpt)) {
 		/* frees happen in the support removal phase */
 		return -ENOMEM;
 	}
@@ -416,12 +421,13 @@ struct nvhost_device tegra_grhost_device = {
 	.id = -1,
 	.resource = nvhost_resources,
 	.num_resources = ARRAY_SIZE(nvhost_resources),
+	.finalize_poweron = power_on_host,
+	.prepare_poweroff = power_off_host,
 	.clocks = {{"host1x", UINT_MAX}, {} },
 	NVHOST_MODULE_NO_POWERGATE_IDS,
 };
 
-static int __devinit nvhost_probe(struct nvhost_device *dev,
-	struct nvhost_device_id *id_table)
+static int __devinit nvhost_probe(struct nvhost_device *dev)
 {
 	struct nvhost_master *host;
 	struct resource *regs, *intr0, *intr1;
@@ -462,7 +468,7 @@ static int __devinit nvhost_probe(struct nvhost_device *dev,
 		goto fail;
 	}
 
-	err = nvhost_alloc_resources(host);
+	err = nvhost_init_chip_support(host);
 	if (err) {
 		dev_err(&dev->dev, "failed to init chip support\n");
 		goto fail;
@@ -496,7 +502,7 @@ static int __devinit nvhost_probe(struct nvhost_device *dev,
 		clk_enable(host->dev->clk[i]);
 	nvhost_syncpt_reset(&host->syncpt);
 	for (i = 0; i < host->dev->num_clks; i++)
-		clk_disable(host->dev->clk[0]);
+	clk_disable(host->dev->clk[0]);
 
 	nvhost_debug_init(host);
 
@@ -504,7 +510,7 @@ static int __devinit nvhost_probe(struct nvhost_device *dev,
 	return 0;
 
 fail:
-	nvhost_free_resources(host);
+	nvhost_remove_chip_support(host);
 	if (host->nvmap)
 		nvmap_client_put(host->nvmap);
 	kfree(host);
@@ -516,7 +522,7 @@ static int __exit nvhost_remove(struct nvhost_device *dev)
 	struct nvhost_master *host = nvhost_get_drvdata(dev);
 	nvhost_intr_deinit(&host->intr);
 	nvhost_syncpt_deinit(&host->syncpt);
-	nvhost_free_resources(host);
+	nvhost_remove_chip_support(host);
 	return 0;
 }
 
@@ -545,9 +551,7 @@ static struct nvhost_driver nvhost_driver = {
 	.driver = {
 		.owner = THIS_MODULE,
 		.name = DRIVER_NAME
-	},
-	.finalize_poweron = power_on_host,
-	.prepare_poweroff = power_off_host,
+	}
 };
 
 static int __init nvhost_mod_init(void)

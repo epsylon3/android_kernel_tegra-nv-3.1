@@ -699,7 +699,7 @@ int __init cardhu_pm298_gpio_switch_regulator_init(void)
 	}
 
 	for (i = 0; i < nfixreg_devs; ++i) {
-		struct fixed_voltage_config *fixed_reg_pdata =
+			struct fixed_voltage_config *fixed_reg_pdata =
 				fixed_reg_devs[i]->dev.platform_data;
 		int gpio_nr = fixed_reg_pdata->gpio;
 		if (gpio_nr < TEGRA_NR_GPIOS)

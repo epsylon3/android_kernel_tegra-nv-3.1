@@ -29,6 +29,7 @@
 #include <linux/utsname.h>
 #include <linux/uaccess.h>
 #include <linux/random.h>
+
 #include <linux/hw_breakpoint.h>
 #include <linux/cpuidle.h>
 #include <linux/console.h>
@@ -39,6 +40,10 @@
 #include <asm/thread_notify.h>
 #include <asm/stacktrace.h>
 #include <asm/mach/time.h>
+
+#ifdef CONFIG_KERNEL_DEBUG_SEC
+#include <linux/kernel_sec_common.h>
+#endif
 
 #ifdef CONFIG_CC_STACKPROTECTOR
 #include <linux/stackprotector.h>
@@ -140,6 +145,10 @@ void arm_machine_restart(char mode, const char *cmd)
 
 	/* Clean and invalidate caches */
 	flush_cache_all();
+
+#ifdef CONFIG_KERNEL_DEBUG_SEC
+	outer_flush_all();
+#endif
 
 	/* Turn off caching */
 	cpu_proc_fin();
@@ -265,6 +274,12 @@ __setup("reboot=", reboot_setup);
 
 void machine_shutdown(void)
 {
+#ifdef CONFIG_KERNEL_DEBUG_SEC
+	kernel_sec_upload_cause_type upload_cause\
+			= kernel_sec_get_upload_cause();
+	if (upload_cause == UPLOAD_CAUSE_INIT)
+		kernel_sec_clear_upload_magic_number();
+#endif
 #ifdef CONFIG_SMP
 	smp_send_stop();
 #endif
@@ -294,6 +309,7 @@ void machine_restart(char *cmd)
 	local_fiq_disable();
 
 	machine_shutdown();
+
 	arm_pm_restart(reboot_mode, cmd);
 }
 

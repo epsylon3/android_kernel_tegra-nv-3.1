@@ -45,9 +45,12 @@ obj-$(CONFIG_GPIO_S5PV210)	+= gpio-s5pv210.o
 
 obj-$(CONFIG_GPIO_SCH)		+= gpio-sch.o
 obj-$(CONFIG_GPIO_STMPE)	+= gpio-stmpe.o
+obj-$(CONFIG_GPIO_STMPE1801)	+= stmpe1801-gpio.o
 obj-$(CONFIG_GPIO_SX150X)	+= gpio-sx150x.o
 obj-$(CONFIG_GPIO_TC3589X)	+= gpio-tc3589x.o
+ifneq ($(CONFIG_MACH_SAMSUNG_P5),y)
 obj-$(CONFIG_ARCH_TEGRA)	+= gpio-tegra.o
+endif
 obj-$(CONFIG_GPIO_TIMBERDALE)	+= gpio-timberdale.o
 obj-$(CONFIG_GPIO_TPS65910)	+= gpio-tps65910.o
 obj-$(CONFIG_GPIO_TPS65912)	+= gpio-tps65912.o

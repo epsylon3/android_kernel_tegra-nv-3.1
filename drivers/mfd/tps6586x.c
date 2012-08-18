@@ -23,11 +23,22 @@
 #include <linux/slab.h>
 #include <linux/gpio.h>
 #include <linux/i2c.h>
+#include <linux/delay.h>
 
 #include <linux/mfd/core.h>
 #include <linux/mfd/tps6586x.h>
 
 #define TPS6586X_SUPPLYENE  0x14
+#ifdef CONFIG_MACH_SAMSUNG_VARIATION_TEGRA
+#define SOFT_RST_BIT        BIT(0) /* Soft reset control */
+
+/* Control Registers */
+#define TPS6586x_CHG1		0x49
+#define TPS6586X_CHG2		0x4A
+
+#define RETRY_CNT			5
+#endif
+
 #define EXITSLREQ_BIT       BIT(1) /* Exit sleep mode request */
 #define SLEEP_MODE_BIT      BIT(3) /* Sleep mode */
 
@@ -50,6 +61,28 @@
 
 /* device id */
 #define TPS6586X_VERSIONCRC	0xcd
+
+#ifdef CONFIG_TPS6586X_ADC
+/* ADC0 Engine Data */
+#define TPS6586x_ADC0_SET	0x61
+#define TPS6586x_ADC0_WAIT	0x62
+#define TPS6586x_ADC0_SUM2	0x94
+#define TPS6586x_ADC0_SUM1	0x95
+#define TPS6586x_ADC0_INT	0x9A
+
+/* ADC0 Constant */
+#define ADC_CONVERSION_DELAY_USEC			70
+#define ADC_CONVERSION_TIMEOUT_USEC			500
+#define ADC_CONVERSION_VOLTAGE_RANGE			2000
+#define ADC_CONVERSION_DIVIDOR				3
+#define ADC_CONVERSION_PRECISION			10
+#define ADC_CONVERSION_SUB_OFFSET			2250
+#define ADC_FULL_SCALE_READING_MV_BAT			4622
+#define ADC_FULL_SCALE_READING_MV_TS			2600
+#define ADC_FULL_SCALE_READING_MV_ANALOG_PIN1		2600
+#define ADC_FULL_SCALE_READING_MV_ANALOG_PIN2		2600
+#define ADC_CONVERSION_PREWAIT_MS			26
+#endif /* CONFIG_TPS6586X_ADC */
 
 struct tps6586x_irq_data {
 	u8	mask_reg;
@@ -110,12 +143,19 @@ static inline int __tps6586x_read(struct i2c_client *client,
 				  int reg, uint8_t *val)
 {
 	int ret;
+	int ret_cnt = 0;
 
-	ret = i2c_smbus_read_byte_data(client, reg);
-	if (ret < 0) {
-		dev_err(&client->dev, "failed reading at 0x%02x\n", reg);
-		return ret;
+	while(ret_cnt++ < RETRY_CNT) {
+		ret = i2c_smbus_read_byte_data(client, reg);
+		if (ret >= 0)
+			break;
+
+		dev_err(&client->dev, "failed reading at 0x%02x(ret=%d)\n",
+			reg, ret_cnt);
 	}
+
+	if(ret < 0)
+		return ret;
 
 	*val = (uint8_t)ret;
 
@@ -140,13 +180,19 @@ static inline int __tps6586x_write(struct i2c_client *client,
 				 int reg, uint8_t val)
 {
 	int ret;
+	int ret_cnt = 0;
 
-	ret = i2c_smbus_write_byte_data(client, reg, val);
-	if (ret < 0) {
-		dev_err(&client->dev, "failed writing 0x%02x to 0x%02x\n",
-				val, reg);
-		return ret;
+	while(ret_cnt++ < RETRY_CNT) {
+		ret = i2c_smbus_write_byte_data(client, reg, val);
+		if (ret >= 0)
+			break;
+
+		dev_err(&client->dev, "failed writing 0x%02x to 0x%02x(ret=%d)\n",
+				val, reg, ret_cnt);
 	}
+
+	if(ret < 0)
+		return ret;
 
 	return 0;
 }
@@ -155,7 +201,10 @@ static inline int __tps6586x_writes(struct i2c_client *client, int reg,
 				  int len, uint8_t *val)
 {
 	int ret, i;
-
+	/*
+	 * tps6586 does not support burst writes.
+	 * i2c writes have to be    1 byte at a time.
+	 */
 	for (i = 0; i < len; i++) {
 		ret = __tps6586x_write(client, reg + i, *(val + i));
 		if (ret < 0)
@@ -256,20 +305,61 @@ out:
 EXPORT_SYMBOL_GPL(tps6586x_update);
 
 static struct i2c_client *tps6586x_i2c_client = NULL;
-static void tps6586x_power_off(void)
+int tps6586x_power_off(void)
 {
 	struct device *dev = NULL;
+	uint8_t data = 0;
+	uint32_t count = 0;
+	int ret;
 
 	if (!tps6586x_i2c_client)
 		return;
 
 	dev = &tps6586x_i2c_client->dev;
 
-	if (tps6586x_clr_bits(dev, TPS6586X_SUPPLYENE, EXITSLREQ_BIT))
-		return;
+	while (1) {
+		/* SLEEP REQUEST EXIT CONTROL */
+		tps6586x_clr_bits(dev, TPS6586X_SUPPLYENE, EXITSLREQ_BIT);
+		ret = tps6586x_read(dev, TPS6586X_SUPPLYENE, &data);
+		if (ret < 0) {
+			pr_err("%s() failed to read with return : %d\n",
+				__func__, ret);
+			continue;
+		}
+		if (data & EXITSLREQ_BIT) {
+			pr_warn("%s: EXITSLREQ_BIT is not set(0x%x)\n", __func__, data);
+			continue;
+		}
 
-	tps6586x_set_bits(dev, TPS6586X_SUPPLYENE, SLEEP_MODE_BIT);
+		/* Set TPS6586X in SLEEP MODE. The device will be powered off */
+		tps6586x_set_bits(dev, TPS6586X_SUPPLYENE, SLEEP_MODE_BIT);
+		mdelay(100);
+		/* The below code should not excute in normal case */
+		ret = tps6586x_read(dev, TPS6586X_SUPPLYENE, &data);
+		if (ret < 0) {
+			pr_err("%s() failed to read with return : %d\n",
+				__func__, ret);
+		} else if (data & SLEEP_MODE_BIT) {
+			pr_info("%s: SLEEP_MODE_BIT is set\n", __func__);
+			break;
+		}
+
+		mdelay(1000);
+	}
+
+	return 0;
 }
+
+#ifdef CONFIG_MACH_SAMSUNG_VARIATION_TEGRA
+int tps6586x_soft_rst(void)
+{
+	if (!tps6586x_i2c_client)
+		return -EINVAL;
+
+	return tps6586x_set_bits(&tps6586x_i2c_client->dev,
+				TPS6586X_SUPPLYENE, SOFT_RST_BIT);
+}
+#endif
 
 static int tps6586x_gpio_get(struct gpio_chip *gc, unsigned offset)
 {
@@ -290,8 +380,8 @@ static void tps6586x_gpio_set(struct gpio_chip *chip, unsigned offset,
 {
 	struct tps6586x *tps6586x = container_of(chip, struct tps6586x, gpio);
 
-	tps6586x_update(tps6586x->dev, TPS6586X_GPIOSET2,
-			value << offset, 1 << offset);
+	__tps6586x_write(tps6586x->client, TPS6586X_GPIOSET2,
+			 value << offset);
 }
 
 static int tps6586x_gpio_input(struct gpio_chip *gc, unsigned offset)
@@ -319,10 +409,12 @@ static int tps6586x_gpio_output(struct gpio_chip *gc, unsigned offset,
 	return tps6586x_update(tps6586x->dev, TPS6586X_GPIOSET1, val, mask);
 }
 
-static int tps6586x_gpio_init(struct tps6586x *tps6586x, int gpio_base)
+static void tps6586x_gpio_init(struct tps6586x *tps6586x, int gpio_base)
 {
+	int ret;
+
 	if (!gpio_base)
-		return 0;
+		return;
 
 	tps6586x->gpio.owner		= THIS_MODULE;
 	tps6586x->gpio.label		= tps6586x->client->name;
@@ -336,7 +428,9 @@ static int tps6586x_gpio_init(struct tps6586x *tps6586x, int gpio_base)
 	tps6586x->gpio.set		= tps6586x_gpio_set;
 	tps6586x->gpio.get		= tps6586x_gpio_get;
 
-	return gpiochip_add(&tps6586x->gpio);
+	ret = gpiochip_add(&tps6586x->gpio);
+	if (ret)
+		dev_warn(tps6586x->dev, "GPIO registration failed: %d\n", ret);
 }
 
 static int __remove_subdev(struct device *dev, void *unused)
@@ -401,8 +495,30 @@ static irqreturn_t tps6586x_irq(int irq, void *data)
 	u32 acks;
 	int ret = 0;
 
+#ifdef CONFIG_MACH_SAMSUNG_VARIATION_TEGRA
+	/* there's a race between the running of this threaded
+	 * irq handler and the resume of the tegra i2c controller
+	 * so sleep briefly to make sure the i2c controller has
+	 * been resumed first.
+	 */
 	ret = tps6586x_reads(tps6586x->dev, TPS6586X_INT_ACK1,
 			     sizeof(acks), (uint8_t *)&acks);
+	if (ret < 0) {
+		int i;
+		for (i = 0; i < 5; i++) {
+			pr_info("%s: failed reading INT_ACK1, sleep & retry\n",
+				__func__);
+			usleep_range(10000, 20000);
+			ret = tps6586x_reads(tps6586x->dev, TPS6586X_INT_ACK1,
+					sizeof(acks), (uint8_t *)&acks);
+			if (!ret)
+				break;
+		}
+	}
+#else
+	ret = tps6586x_reads(tps6586x->dev, TPS6586X_INT_ACK1,
+			     sizeof(acks), (uint8_t *)&acks);
+#endif
 
 	if (ret < 0) {
 		dev_err(tps6586x->dev, "failed to read interrupt status\n");
@@ -410,6 +526,8 @@ static irqreturn_t tps6586x_irq(int irq, void *data)
 	}
 
 	acks = le32_to_cpu(acks);
+
+	pr_debug("%s: INT_ACK1 has value 0x%x\n", __func__, acks);
 
 	while (acks) {
 		int i = __ffs(acks);
@@ -473,6 +591,149 @@ static int __devinit tps6586x_irq_init(struct tps6586x *tps6586x, int irq,
 	return ret;
 }
 
+#ifdef CONFIG_TPS6586X_ADC
+
+static struct tps6586x *g_tps6586x;
+
+/* read voltage from ADC of TPS6586X
+ *	CH1(ACCESSORY_ID)
+ *	CH2(REMOTE_SENSE)
+ */
+static int __tps6586x_adc_read(struct tps6586x *tps6586x, u32 *mili_volt,
+			u8 channel)
+{
+	u32 timeout  = 0;
+	uint8_t  dataS1  = 0;
+	uint8_t  dataH   = 0;
+	uint8_t  dataL   = 0;
+
+	int ret;
+
+	pr_info("%s(channel:%d)\n", __func__, channel);
+	/* error check */
+	if (WARN(tps6586x == NULL, "%s() tps6586x is null\n", __func__))
+		return -1;
+	if (WARN(mili_volt == NULL, "%s() mili_volt is null\n", __func__))
+		return -2;
+	if (WARN(channel > 2, "%s() channel error\n", __func__))
+		return -3;
+
+	*mili_volt = 0;    /* Default is 0V. */
+
+	/* Configuring the adc conversion cycle
+	 * ADC0_WAIT register(0x62)
+	 * Reset all ADC engines and return them to the idle state;
+	 * ADC0_RESET: 1
+	*/
+	ret = tps6586x_write(tps6586x->dev, TPS6586x_ADC0_WAIT, 0x80);
+	if (ret < 0) {
+		dev_err(tps6586x->dev, "%s() failed writing %d(%d)\n",
+			__func__, TPS6586x_ADC0_WAIT, ret);
+		return -4;
+	}
+
+	/* ADC0_SET register(0x61)
+	 * ADC0_EN: 0(Don't start conversion);
+	 * Number of Readings: 10; CHANNEL: CH1(Analog1)
+	 */
+	ret = tps6586x_write(tps6586x->dev, TPS6586x_ADC0_SET, 0x10 | channel);
+	if (ret < 0) {
+		dev_err(tps6586x->dev, "%s() failed writing %d(%d)\n",
+			__func__, TPS6586x_ADC0_SET, ret);
+		return -5;
+	}
+
+	/*  ADC0_WAIT register(0x62)
+	 *  REF_EN: 0; AUTO_REF: 1; Wait time: 0.062ms
+	*/
+	ret = tps6586x_write(tps6586x->dev, TPS6586x_ADC0_WAIT, 0x21);
+	if (ret < 0) {
+		dev_err(tps6586x->dev, "%s() failed writing %d(%d)\n",
+			__func__, TPS6586x_ADC0_WAIT, ret);
+		return -6;
+	}
+
+	/* Start conversion!! */
+	ret = tps6586x_write(tps6586x->dev, TPS6586x_ADC0_SET, 0x90 | channel);
+	if (ret < 0) {
+		dev_err(tps6586x->dev, "%s() failed writing %d(%d)\n",
+			__func__, TPS6586x_ADC0_SET, ret);
+		return -7;
+	}
+
+	/* Wait for conversion */
+	msleep(ADC_CONVERSION_PREWAIT_MS);
+
+	/* make sure the conversion is completed, or adc error. */
+	while (1) {
+		/* Read ADC status register */
+		ret = tps6586x_read(tps6586x->dev, TPS6586x_ADC0_INT, &dataS1);
+		if (ret < 0) {
+			dev_err(tps6586x->dev,
+				"%s() failed to read with return : %d\n",
+				__func__, ret);
+			return -8;
+		}
+
+		/* Conversion is done! */
+		if (dataS1 & 0x80)
+			break;
+
+		/* ADC error! */
+		if (dataS1 & 0x40) {
+			dev_err(tps6586x->dev, "ADC conversion error.\n");
+			return -9;
+		}
+
+		udelay(ADC_CONVERSION_DELAY_USEC);
+		timeout += ADC_CONVERSION_DELAY_USEC;
+		if (timeout >= ADC_CONVERSION_TIMEOUT_USEC)
+			return -10;
+	}
+
+	/* Read the ADC conversion Average (SUM). */
+	ret = tps6586x_read(tps6586x->dev, TPS6586x_ADC0_SUM2, &dataH);
+	if (ret < 0) {
+		dev_err(tps6586x->dev, "%s() failed reading %d(%d)\n",
+			__func__, TPS6586x_ADC0_SUM2, ret);
+		return -11;
+	}
+
+	ret = tps6586x_read(tps6586x->dev, TPS6586x_ADC0_SUM1, &dataL);
+	if (ret < 0) {
+		dev_err(tps6586x->dev, "%s() failed reading %d(%d)\n",
+			__func__, TPS6586x_ADC0_SUM1, ret);
+		return -12;
+	}
+
+	/* ADC0_WAIT register(0x62)
+	 * REF_EN: 0; AUTO_REF: 0; Wait time: 0.062ms
+	*/
+	ret = tps6586x_write(tps6586x->dev, TPS6586x_ADC0_WAIT, 0x01);
+	if (ret < 0) {
+		dev_err(tps6586x->dev, "%s() failed writing %d(%d)\n",
+			__func__, TPS6586x_ADC0_WAIT, ret);
+		return -13;
+	}
+
+	/* Get a result value with mV. */
+	*mili_volt = (((dataH << 8) | dataL) *
+		ADC_FULL_SCALE_READING_MV_ANALOG_PIN1) / 1023 / 16;
+
+	pr_info("[PM_ADC] ADC%d result : %dmV(0x%x)\n",
+		channel, *mili_volt, ((dataH << 8) | dataL));
+
+	return 0;
+}
+
+int tps6586x_adc_read(u32 *mili_volt, u8 channel)
+{
+	return __tps6586x_adc_read(g_tps6586x, mili_volt, channel);
+}
+EXPORT_SYMBOL_GPL(tps6586x_adc_read);
+
+#endif /* CONFIG_TPS6586X_ADC */
+
 static int __devinit tps6586x_add_subdevs(struct tps6586x *tps6586x,
 					  struct tps6586x_platform_data *pdata)
 {
@@ -504,6 +765,32 @@ failed:
 	tps6586x_remove_subdevs(tps6586x);
 	return ret;
 }
+
+#ifdef CONFIG_MACH_SAMSUNG_VARIATION_TEGRA
+static int tps6586x_print_reg(void)
+{
+	int i, ret = 0;
+	uint8_t reg[256];
+
+	memset(reg, 1, 256);
+	for (i = 0; i < 255; i++) {
+		mutex_lock(&g_tps6586x->lock);
+		ret = __tps6586x_read(to_i2c_client(g_tps6586x->dev),
+				i, &reg[i]);
+		mutex_unlock(&g_tps6586x->lock);
+	}
+	pr_info("[PM] %s()-----------------\n", __func__);
+	for (i = 0; i < 255; i += 8) {
+		pr_info("0x%02x : 0x%02x 0x%02x 0x%02x"
+			" 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x\n",
+			i, reg[i], reg[i+1], reg[i+2], reg[i+3],
+			reg[i+4], reg[i+5], reg[i+6], reg[i+7]);
+	}
+	pr_info("[PM]            -----------------\n");
+
+	return ret;
+}
+#endif /* CONFIG_MACH_SAMSUNG_VARIATION_TEGRA */
 
 static int __devinit tps6586x_i2c_probe(struct i2c_client *client,
 					const struct i2c_device_id *id)
@@ -544,22 +831,26 @@ static int __devinit tps6586x_i2c_probe(struct i2c_client *client,
 		}
 	}
 
-	ret = tps6586x_gpio_init(tps6586x, pdata->gpio_base);
-	if (ret) {
-		dev_err(&client->dev, "GPIO registration failed: %d\n", ret);
-		goto err_gpio_init;
-	}
-
 	ret = tps6586x_add_subdevs(tps6586x, pdata);
 	if (ret) {
 		dev_err(&client->dev, "add devices failed: %d\n", ret);
 		goto err_add_devs;
 	}
 
+	tps6586x_gpio_init(tps6586x, pdata->gpio_base);
+
 	if (pdata->use_power_off && !pm_power_off)
 		pm_power_off = tps6586x_power_off;
 
 	tps6586x_i2c_client = client;
+
+#ifdef CONFIG_MACH_SAMSUNG_VARIATION_TEGRA
+	g_tps6586x = tps6586x;
+	tps6586x_print_reg();
+
+	/* Disable Charger LDO mode, Dynamic Timer Function */
+	tps6586x_write(tps6586x->dev, TPS6586X_CHG2, 0x00);
+#endif
 
 	return 0;
 

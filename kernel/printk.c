@@ -43,6 +43,14 @@
 #include <linux/rculist.h>
 
 #include <asm/uaccess.h>
+#ifdef CONFIG_KERNEL_DEBUG_SEC
+#include <linux/io.h>
+#endif
+
+#ifdef CONFIG_KERNEL_DEBUG_SEC_CONSOLE_ENABLE_BY_UART_SELECT
+#include <mach/gpio-sec.h>
+#include <mach/gpio.h>
+#endif
 
 /*
  * Architectures can override it:
@@ -172,6 +180,31 @@ void log_buf_kexec_setup(void)
 }
 #endif
 
+#ifdef CONFIG_KERNEL_DEBUG_SEC_RAM_CONSOLE_VERBOSE
+/* saved ram console */
+struct console *ram_console_driver;
+#endif
+
+#ifdef CONFIG_KERNEL_DEBUG_SEC
+/*{{Mark for GetLog -1/2*/
+struct struct_kernel_log_mark {
+	u32 special_mark_1;
+	u32 special_mark_2;
+	u32 special_mark_3;
+	u32 special_mark_4;
+	void *p__log_buf;
+};
+
+static struct struct_kernel_log_mark kernel_log_mark = {
+	.special_mark_1 = (('*' << 24) | ('^' << 16) | ('^' << 8) | ('*' << 0)),
+	.special_mark_2 = (('I' << 24) | ('n' << 16) | ('f' << 8) | ('o' << 0)),
+	.special_mark_3 = (('H' << 24) | ('e' << 16) | ('r' << 8) | ('e' << 0)),
+	.special_mark_4 = (('k' << 24) | ('l' << 16) | ('o' << 8) | ('g' << 0)),
+	.p__log_buf = __log_buf,
+};
+/*}} Mark for GetLog -1/2*/
+#endif
+
 /* requested log_buf_len from kernel cmdline */
 static unsigned long __initdata new_log_buf_len;
 
@@ -184,6 +217,12 @@ static int __init log_buf_len_setup(char *str)
 		size = roundup_pow_of_two(size);
 	if (size > log_buf_len)
 		new_log_buf_len = size;
+
+#ifdef CONFIG_KERNEL_DEBUG_SEC
+	/*{{Mark for GetLog -2/2*/
+	kernel_log_mark.p__log_buf = __log_buf;
+	/*}} Mark for GetLog -2/2*/
+#endif
 
 	return 0;
 }
@@ -563,14 +602,30 @@ static void __call_console_drivers(unsigned start, unsigned end)
 	struct console *con;
 
 	for_each_console(con) {
-		if (exclusive_console && con != exclusive_console)
+#ifdef CONFIG_KERNEL_DEBUG_SEC_RAM_CONSOLE_VERBOSE
+		/* ignore ram console */
+		if (con == ram_console_driver)
 			continue;
+#endif
 		if ((con->flags & CON_ENABLED) && con->write &&
 				(cpu_online(smp_processor_id()) ||
 				(con->flags & CON_ANYTIME)))
 			con->write(con, &LOG_BUF(start), end - start);
 	}
 }
+
+#ifdef CONFIG_KERNEL_DEBUG_SEC_RAM_CONSOLE_VERBOSE
+static void __call_ram_console(unsigned start, unsigned end)
+{
+	struct console *con = ram_console_driver;
+
+	if (con)
+		if ((con->flags & CON_ENABLED) && con->write &&
+				(cpu_online(smp_processor_id()) ||
+				(con->flags & CON_ANYTIME)))
+			con->write(con, &LOG_BUF(start), end - start);
+}
+#endif
 
 static int __read_mostly ignore_loglevel;
 
@@ -591,7 +646,12 @@ static void _call_console_drivers(unsigned start,
 				unsigned end, int msg_log_level)
 {
 	if ((msg_log_level < console_loglevel || ignore_loglevel) &&
-			console_drivers && start != end) {
+			console_drivers && start != end
+#ifdef CONFIG_KERNEL_DEBUG_SEC_CONSOLE_ENABLE_BY_UART_SELECT
+			&& 1 == gpio_get_value(GPIO_UART_SEL)
+			/* UART path is AP */
+#endif
+			) {
 		if ((start & LOG_BUF_MASK) > (end & LOG_BUF_MASK)) {
 			/* wrapped write */
 			__call_console_drivers(start & LOG_BUF_MASK,
@@ -601,6 +661,20 @@ static void _call_console_drivers(unsigned start,
 			__call_console_drivers(start, end);
 		}
 	}
+
+#ifdef CONFIG_KERNEL_DEBUG_SEC_RAM_CONSOLE_VERBOSE
+	/* call ram console */
+	if (ram_console_driver) {
+		if ((start & LOG_BUF_MASK) > (end & LOG_BUF_MASK)) {
+			/* wrapped write */
+			__call_ram_console(start & LOG_BUF_MASK,
+						log_buf_len);
+			__call_ram_console(0, end & LOG_BUF_MASK);
+		} else {
+			__call_ram_console(start, end);
+		}
+	}
+#endif
 }
 
 /*
@@ -1326,26 +1400,9 @@ again:
 	}
 	console_locked = 0;
 
-	/* Release the exclusive_console once it is used */
-	if (unlikely(exclusive_console))
-		exclusive_console = NULL;
-
-	spin_unlock(&logbuf_lock);
-
 	up(&console_sem);
 
-	/*
-	 * Someone could have filled up the buffer again, so re-check if there's
-	 * something to flush. In case we cannot trylock the console_sem again,
-	 * there's a new owner and the console_unlock() from them will do the
-	 * flush, no worries.
-	 */
-	spin_lock(&logbuf_lock);
-	if (con_start != log_end)
-		retry = 1;
 	spin_unlock_irqrestore(&logbuf_lock, flags);
-	if (retry && console_trylock())
-		goto again;
 
 	if (wake_klogd)
 		wake_up_klogd();
@@ -1557,6 +1614,13 @@ void register_console(struct console *newcon)
 	if (bcon && ((newcon->flags & (CON_CONSDEV | CON_BOOT)) == CON_CONSDEV))
 		newcon->flags &= ~CON_PRINTBUFFER;
 
+#ifdef CONFIG_KERNEL_DEBUG_SEC_RAM_CONSOLE_VERBOSE
+	/* save ram console */
+	if (!strncmp(newcon->name, "ram", 4)) {
+		ram_console_driver = newcon;
+		printk(KERN_NOTICE "ram console is registered in verbose.\n");
+	}
+#endif
 	/*
 	 *	Put this console in the list - keep the
 	 *	preferred driver at the head of the list.
@@ -1579,12 +1643,6 @@ void register_console(struct console *newcon)
 		spin_lock_irqsave(&logbuf_lock, flags);
 		con_start = log_start;
 		spin_unlock_irqrestore(&logbuf_lock, flags);
-		/*
-		 * We're about to replay the log buffer.  Only do this to the
-		 * just-registered console to avoid excessive message spam to
-		 * the already-registered consoles.
-		 */
-		exclusive_console = newcon;
 	}
 	console_unlock();
 	console_sysfs_notify();
@@ -1623,6 +1681,12 @@ int unregister_console(struct console *console)
 #ifdef CONFIG_A11Y_BRAILLE_CONSOLE
 	if (console->flags & CON_BRL)
 		return braille_unregister_console(console);
+#endif
+
+#ifdef CONFIG_KERNEL_DEBUG_SEC_RAM_CONSOLE_VERBOSE
+	/* delete ram console */
+	if (console == ram_console_driver)
+		ram_console_driver = NULL;
 #endif
 
 	console_lock();

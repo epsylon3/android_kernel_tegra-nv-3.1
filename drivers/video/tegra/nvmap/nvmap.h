@@ -30,7 +30,7 @@
 #include <linux/sched.h>
 #include <linux/wait.h>
 #include <linux/atomic.h>
-#include <linux/nvmap.h>
+#include <mach/nvmap.h>
 #include "nvmap_heap.h"
 
 struct nvmap_device;
@@ -39,7 +39,7 @@ struct tegra_iovmm_area;
 
 #if defined(CONFIG_TEGRA_NVMAP)
 #define nvmap_err(_client, _fmt, ...)				\
-	dev_err(nvmap_client_to_device(_client),		\
+	dev_info(nvmap_client_to_device(_client),		\
 		"%s: "_fmt, __func__, ##__VA_ARGS__)
 
 #define nvmap_warn(_client, _fmt, ...)				\
@@ -203,6 +203,9 @@ struct nvmap_handle *nvmap_get_handle_id(struct nvmap_client *client,
 
 struct nvmap_handle_ref *nvmap_create_handle(struct nvmap_client *client,
 					     size_t size);
+
+struct nvmap_handle_ref *nvmap_duplicate_handle_id(struct nvmap_client *client,
+						   unsigned long id);
 
 int nvmap_alloc_handle_id(struct nvmap_client *client,
 			  unsigned long id, unsigned int heap_mask,

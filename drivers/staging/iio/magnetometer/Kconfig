@@ -3,7 +3,7 @@
 #
 comment "Magnetometer sensors"
 
-config SENSORS_AK8975
+config SENSORS_AKM8975
 	tristate "Asahi Kasei AK8975 3-Axis Magnetometer"
 	depends on I2C
 	help

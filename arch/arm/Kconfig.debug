@@ -129,4 +129,25 @@ config DEBUG_S3C_UART
 	  The uncompressor code port configuration is now handled
 	  by CONFIG_S3C_LOWLEVEL_UART_PORT.
 
+config KERNEL_DEBUG_SEC
+	bool "AP and CP crash dump support"
+	default n
+	help
+	  Say Y here if you want to enable AP and CP crash dump code.
+	  Resets into bootloader to get the dump using special host tool.
+
+config KERNEL_DEBUG_SEC_RAM_CONSOLE_VERBOSE
+	bool "Verbose mode for Ram Console"
+	default n
+	help
+	  Say Y here if you want to enable verbose mode for ram console.
+	  All kernel log will be written into ram console regardless of loglevel.
+
+config KERNEL_DEBUG_SEC_CONSOLE_ENABLE_BY_UART_SELECT
+	bool "Console enables when UART is selected to AP"
+	default n
+	help
+	  Say Y here if you want to enable consoles (except Ram Console)
+	  only when UART is selected to AP.
+
 endmenu

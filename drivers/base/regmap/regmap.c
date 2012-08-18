@@ -543,7 +543,7 @@ static int _regmap_raw_write(struct regmap *map, unsigned int reg,
 }
 
 int _regmap_write(struct regmap *map, unsigned int reg,
-		  unsigned int val)
+			 unsigned int val)
 {
 	int ret;
 	BUG_ON(!map->format.format_write && !map->format.format_val);
@@ -566,7 +566,7 @@ int _regmap_write(struct regmap *map, unsigned int reg,
 		trace_regmap_hw_write_start(map->dev, reg, 1);
 
 		ret = map->bus->write(map->bus_context, map->work_buf,
-				      map->format.buf_size);
+				       map->format.buf_size);
 
 		trace_regmap_hw_write_done(map->dev, reg, 1);
 
@@ -723,7 +723,7 @@ static int _regmap_raw_read(struct regmap *map, unsigned int reg, void *val,
 	trace_regmap_hw_read_done(map->dev, reg,
 				  val_len / map->format.val_bytes);
 
-	return ret;
+		return ret;
 }
 
 static int _regmap_read(struct regmap *map, unsigned int reg,
@@ -808,7 +808,7 @@ int regmap_raw_read(struct regmap *map, unsigned int reg, void *val,
 	if (regmap_volatile_range(map, reg, val_count) || map->cache_bypass ||
 	    map->cache_type == REGCACHE_NONE) {
 		/* Physical block read if there's no cache involved */
-		ret = _regmap_raw_read(map, reg, val, val_len);
+	ret = _regmap_raw_read(map, reg, val, val_len);
 
 	} else {
 		/* Otherwise go word by word for the cache; should be low
@@ -855,12 +855,12 @@ int regmap_bulk_read(struct regmap *map, unsigned int reg, void *val,
 		return -EINVAL;
 
 	if (vol || map->cache_type == REGCACHE_NONE) {
-		ret = regmap_raw_read(map, reg, val, val_bytes * val_count);
-		if (ret != 0)
-			return ret;
+	ret = regmap_raw_read(map, reg, val, val_bytes * val_count);
+	if (ret != 0)
+		return ret;
 
-		for (i = 0; i < val_count * val_bytes; i += val_bytes)
-			map->format.parse_val(val + i);
+	for (i = 0; i < val_count * val_bytes; i += val_bytes)
+		map->format.parse_val(val + i);
 	} else {
 		for (i = 0; i < val_count; i++) {
 			ret = regmap_read(map, reg + (i * map->reg_stride),
@@ -891,7 +891,7 @@ static int _regmap_update_bits(struct regmap *map, unsigned int reg,
 	tmp |= val & mask;
 
 	if (tmp != orig) {
-		ret = _regmap_write(map, reg, tmp);
+	ret = _regmap_write(map, reg, tmp);
 		*change = true;
 	} else {
 		*change = false;

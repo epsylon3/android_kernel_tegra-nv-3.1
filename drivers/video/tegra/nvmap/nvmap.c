@@ -32,7 +32,7 @@
 #include <asm/tlbflush.h>
 
 #include <mach/iovmm.h>
-#include <linux/nvmap.h>
+#include <mach/nvmap.h>
 
 #include "nvmap.h"
 #include "nvmap_mru.h"

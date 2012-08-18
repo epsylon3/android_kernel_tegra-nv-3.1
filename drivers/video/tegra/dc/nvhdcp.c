@@ -25,6 +25,9 @@
 #include <linux/workqueue.h>
 #include <asm/atomic.h>
 
+#include <linux/hrtimer.h>
+#include <linux/ktime.h>
+
 #include <mach/dc.h>
 #include <mach/kfuse.h>
 
@@ -36,6 +39,20 @@
 #include "hdmi.h"
 
 DECLARE_WAIT_QUEUE_HEAD(wq_worker);
+
+#if defined(CONFIG_MACH_SAMSUNG_P4) || defined(CONFIG_MACH_SAMSUNG_P4WIFI) || defined(CONFIG_MACH_SAMSUNG_P4LTE)
+#define SAMSUNG_SW_I2C 1
+#endif
+
+#if defined(CONFIG_MACH_SAMSUNG_P5) || defined(CONFIG_MACH_SAMSUNG_P5WIFI)
+#define __SAMSUNG_HDMI_FLAG_WORKAROUND__
+#endif
+
+/* To use hrtimer */
+#define	MS_TO_NS(x)	(x * 1000000)
+
+static struct hrtimer hr_five_s_timer;
+static bool five_s_expired;
 
 /* for 0x40 Bcaps */
 #define BCAPS_REPEATER (1 << 6)
@@ -101,6 +118,9 @@ struct tegra_nvhdcp {
 	int				fail_count;
 };
 
+enum hrtimer_restart hrtimer_five_s_callback(struct hrtimer *timer);
+void start_hrtimer_five_s(void);
+
 static inline bool nvhdcp_is_plugged(struct tegra_nvhdcp *nvhdcp)
 {
 	rmb();
@@ -114,11 +134,26 @@ static inline bool nvhdcp_set_plugged(struct tegra_nvhdcp *nvhdcp, bool plugged)
 	return plugged;
 }
 
+#ifdef SAMSUNG_SW_I2C
+static DEFINE_SPINLOCK(temp_lock);
+#endif
+
+#ifdef	__SAMSUNG_HDMI_FLAG_WORKAROUND__
+extern	bool tegra_dc_hdmi_hpd(struct tegra_dc *dc, char* call_func_name);
+#endif
+
 static int nvhdcp_i2c_read(struct tegra_nvhdcp *nvhdcp, u8 reg,
 					size_t len, void *data)
 {
 	int status;
+#ifdef SAMSUNG_SW_I2C
+	unsigned long flags;
+#endif
 	int retries = 15;
+#ifdef __SAMSUNG_HDMI_FLAG_WORKAROUND__
+	struct tegra_dc_hdmi_data *hdmi = nvhdcp->hdmi;
+	struct tegra_dc	*dc = hdmi->dc;
+#endif
 	struct i2c_msg msg[] = {
 		{
 			.addr = 0x74 >> 1, /* primary link */
@@ -139,10 +174,27 @@ static int nvhdcp_i2c_read(struct tegra_nvhdcp *nvhdcp, u8 reg,
 			nvhdcp_err("disconnect during i2c xfer\n");
 			return -EIO;
 		}
+
+#ifdef __SAMSUNG_HDMI_FLAG_WORKAROUND__
+		if (tegra_dc_hdmi_hpd(dc, __func__) == 0) {
+			nvhdcp_err("%s() hpd is low\n", __func__);
+			return -EIO;
+		}
+#endif
+
+#ifdef SAMSUNG_SW_I2C
+		spin_lock_irqsave(&temp_lock, flags);
+#endif
 		status = i2c_transfer(nvhdcp->client->adapter,
 			msg, ARRAY_SIZE(msg));
-		if ((status < 0) && (retries > 1))
+#ifdef SAMSUNG_SW_I2C
+		spin_unlock_irqrestore(&temp_lock, flags);
+#endif
+		if ((status < 0) && (retries > 1)) {
+			mutex_unlock(&nvhdcp->lock);
 			msleep(250);
+			mutex_lock(&nvhdcp->lock);
+		}
 	} while ((status < 0) && retries--);
 
 	if (status < 0) {
@@ -158,6 +210,10 @@ static int nvhdcp_i2c_write(struct tegra_nvhdcp *nvhdcp, u8 reg,
 {
 	int status;
 	u8 buf[len + 1];
+#ifdef __SAMSUNG_HDMI_FLAG_WORKAROUND__
+	struct tegra_dc_hdmi_data *hdmi = nvhdcp->hdmi;
+	struct tegra_dc	*dc = hdmi->dc;
+#endif
 	struct i2c_msg msg[] = {
 		{
 			.addr = 0x74 >> 1, /* primary link */
@@ -167,6 +223,9 @@ static int nvhdcp_i2c_write(struct tegra_nvhdcp *nvhdcp, u8 reg,
 		},
 	};
 	int retries = 15;
+#ifdef SAMSUNG_SW_I2C
+	unsigned long flags;
+#endif
 
 	buf[0] = reg;
 	memcpy(buf + 1, data, len);
@@ -176,10 +235,28 @@ static int nvhdcp_i2c_write(struct tegra_nvhdcp *nvhdcp, u8 reg,
 			nvhdcp_err("disconnect during i2c xfer\n");
 			return -EIO;
 		}
+
+#ifdef __SAMSUNG_HDMI_FLAG_WORKAROUND__
+		if (tegra_dc_hdmi_hpd(dc, __func__) == 0) {
+			nvhdcp_err("%s() hpd is low\n", __func__);
+			return -EIO;
+		}
+#endif
+
+#ifdef SAMSUNG_SW_I2C
+		spin_lock_irqsave(&temp_lock, flags);
+#endif
+
 		status = i2c_transfer(nvhdcp->client->adapter,
 			msg, ARRAY_SIZE(msg));
-		if ((status < 0) && (retries > 1))
+#ifdef SAMSUNG_SW_I2C
+		spin_unlock_irqrestore(&temp_lock, flags);
+#endif
+		if ((status < 0) && (retries > 1)) {
+			mutex_unlock(&nvhdcp->lock);
 			msleep(250);
+			mutex_lock(&nvhdcp->lock);
+		}
 	} while ((status < 0) && retries--);
 
 	if (status < 0) {
@@ -716,6 +793,9 @@ static int load_kfuse(struct tegra_dc_hdmi_data *hdmi)
 static int verify_link(struct tegra_nvhdcp *nvhdcp, bool wait_ri)
 {
 	struct tegra_dc_hdmi_data *hdmi = nvhdcp->hdmi;
+#ifdef __SAMSUNG_HDMI_FLAG_WORKAROUND__
+	struct tegra_dc	*dc = hdmi->dc;
+#endif
 	int retries = 3;
 	u16 old, rx, tx;
 	int e;
@@ -725,10 +805,37 @@ static int verify_link(struct tegra_nvhdcp *nvhdcp, bool wait_ri)
 	tx = 0;
 	/* retry 3 times to deal with I2C link issues */
 	do {
+#ifdef __SAMSUNG_HDMI_FLAG_WORKAROUND__
+		if (!nvhdcp_is_plugged(nvhdcp)) {
+			nvhdcp_err("aborting verify links - lost hdmi connection\n");
+			return -EIO;
+		}
+
+		if (tegra_dc_hdmi_hpd(dc, __func__) == 0) {
+			nvhdcp_err("%s() hpd is low 1\n", __func__);
+			return -EIO;
+		}
+#endif
+
 		if (wait_ri)
 			old = get_transmitter_ri(hdmi);
 
+#ifdef __SAMSUNG_HDMI_FLAG_WORKAROUND__
+		if (tegra_dc_hdmi_hpd(dc, __func__) == 0) {
+			nvhdcp_err("%s() hpd is low 2\n", __func__);
+			return -EIO;
+		}
+#endif
+
 		e = get_receiver_ri(nvhdcp, &rx);
+
+#ifdef __SAMSUNG_HDMI_FLAG_WORKAROUND__
+		if (tegra_dc_hdmi_hpd(dc, __func__) == 0) {
+			nvhdcp_err("%s() hpd is low 3\n", __func__);
+			return -EIO;
+		}
+#endif
+
 		if (!e) {
 			if (!rx) {
 				nvhdcp_err("Ri is 0!\n");
@@ -738,8 +845,17 @@ static int verify_link(struct tegra_nvhdcp *nvhdcp, bool wait_ri)
 			tx = get_transmitter_ri(hdmi);
 		} else {
 			rx = ~tx;
+			mutex_unlock(&nvhdcp->lock);
 			msleep(50);
+			mutex_lock(&nvhdcp->lock);
 		}
+
+#ifdef __SAMSUNG_HDMI_FLAG_WORKAROUND__
+		if (tegra_dc_hdmi_hpd(dc, __func__) == 0) {
+			nvhdcp_err("%s() hpd is low 4\n", __func__);
+			return -EIO;
+		}
+#endif
 
 	} while (wait_ri && --retries && old != tx);
 
@@ -766,6 +882,7 @@ static int get_repeater_info(struct tegra_nvhdcp *nvhdcp)
 
 	/* wait up to 5 seconds for READY on repeater */
 	retries = 51;
+	start_hrtimer_five_s();
 	do {
 		if (!nvhdcp_is_plugged(nvhdcp)) {
 			nvhdcp_err("disconnect while waiting for repeater\n");
@@ -773,12 +890,21 @@ static int get_repeater_info(struct tegra_nvhdcp *nvhdcp)
 		}
 
 		e = get_bcaps(nvhdcp, &b_caps);
+		if (e < 0) {
+			nvhdcp_err("i2c fail while getting bcaps\n");
+			return -EIO;
+		}
 		if (!e && (b_caps & BCAPS_READY)) {
 			nvhdcp_debug("Bcaps READY from repeater\n");
 			break;
 		}
 		if (retries > 1)
 			msleep(100);
+		printk(KERN_ERR "[HDCP] Repeater retries = %d\n", retries);
+		if (five_s_expired) {
+			retries = 0;
+			break;
+		}
 	} while (--retries);
 	if (!retries) {
 		nvhdcp_err("repeater Bcaps read timeout\n");
@@ -832,7 +958,7 @@ static void nvhdcp_downstream_worker(struct work_struct *work)
 	u8 b_caps;
 	u32 tmp;
 	u32 res;
-
+	bool hdcp_state_changed = false;
 	nvhdcp_vdbg("%s():started thread %s\n", __func__, nvhdcp->name);
 
 	mutex_lock(&nvhdcp->lock);
@@ -886,8 +1012,9 @@ static void nvhdcp_downstream_worker(struct work_struct *work)
 		nvhdcp_err("SROM error\n");
 		goto failure;
 	}
-
+	mutex_unlock(&nvhdcp->lock);
 	msleep(25);
+	mutex_lock(&nvhdcp->lock);
 
 	nvhdcp->a_ksv = get_aksv(hdmi);
 	nvhdcp->a_n = get_an(hdmi);
@@ -959,6 +1086,14 @@ static void nvhdcp_downstream_worker(struct work_struct *work)
 
 	e = verify_link(nvhdcp, false);
 	if (e) {
+		/* get_repeater_info operate once */
+		if (b_caps & BCAPS_REPEATER) {
+			e = get_repeater_info(nvhdcp);
+			if (e) {
+				nvhdcp_err("get repeater info failed\n");
+				goto failure;
+			}
+		}
 		nvhdcp_err("link verification failed err %d\n", e);
 		goto failure;
 	}
@@ -987,12 +1122,19 @@ static void nvhdcp_downstream_worker(struct work_struct *work)
 		if (!nvhdcp_is_plugged(nvhdcp))
 			goto lost_hdmi;
 
-		if (nvhdcp->state != STATE_LINK_VERIFY)
+		if (nvhdcp->state != STATE_LINK_VERIFY) {
+			hdcp_state_changed = true;
 			goto failure;
+		}
 
 		e = verify_link(nvhdcp, true);
 		if (e) {
 			nvhdcp_err("link verification failed err %d\n", e);
+			goto failure;
+		}
+
+		if (nvhdcp->state != STATE_LINK_VERIFY) {
+			hdcp_state_changed = true;
 			goto failure;
 		}
 		mutex_unlock(&nvhdcp->lock);
@@ -1006,6 +1148,10 @@ failure:
 	nvhdcp->fail_count++;
 	if(nvhdcp->fail_count > 5) {
 	        nvhdcp_err("nvhdcp failure - too many failures, giving up!\n");
+	} else if (hdcp_state_changed) {
+		nvhdcp_err("nvhdcp failure - might be renegotiated by upstream\n");
+		queue_delayed_work(nvhdcp->downstream_wq, &nvhdcp->work,
+						msecs_to_jiffies(1000));
 	} else {
 		nvhdcp_err("nvhdcp failure - renegotiating in 1 second\n");
 		if (!nvhdcp_is_plugged(nvhdcp))
@@ -1052,7 +1198,7 @@ static int tegra_nvhdcp_off(struct tegra_nvhdcp *nvhdcp)
 
 void tegra_nvhdcp_set_plug(struct tegra_nvhdcp *nvhdcp, bool hpd)
 {
-	nvhdcp_debug("hdmi hotplug detected (hpd = %d)\n", hpd);
+	nvhdcp_info("hdmi hotplug detected (hpd = %d)\n", hpd);
 
 	if (hpd) {
 		nvhdcp_set_plugged(nvhdcp, true);
@@ -1239,6 +1385,10 @@ struct tegra_nvhdcp *tegra_nvhdcp_create(struct tegra_dc_hdmi_data *hdmi,
 
 	nvhdcp_vdbg("%s(): created misc device %s\n", __func__, nvhdcp->name);
 
+	hrtimer_init(&hr_five_s_timer, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
+	hr_five_s_timer.function = &hrtimer_five_s_callback;
+	five_s_expired = false;
+
 	return nvhdcp;
 free_workqueue:
 	destroy_workqueue(nvhdcp->downstream_wq);
@@ -1247,6 +1397,22 @@ free_nvhdcp:
 	kfree(nvhdcp);
 	nvhdcp_err("unable to create device.\n");
 	return ERR_PTR(e);
+}
+
+enum hrtimer_restart hrtimer_five_s_callback(struct hrtimer *timer)
+{
+	five_s_expired = true;
+	return HRTIMER_NORESTART;
+}
+
+void start_hrtimer_five_s(void)
+{
+	ktime_t ktime;
+
+	hrtimer_cancel(&hr_five_s_timer);
+	ktime = ktime_set(5, 0);
+	five_s_expired = false;
+	hrtimer_start(&hr_five_s_timer, ktime, HRTIMER_MODE_REL);
 }
 
 void tegra_nvhdcp_destroy(struct tegra_nvhdcp *nvhdcp)

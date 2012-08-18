@@ -38,17 +38,17 @@ static struct rmi_f19_button_map synaptics_button_map = {
 static int synaptics_touchpad_gpio_setup(void *gpio_data, bool configure)
 {
 	if (configure) {
-		tegra_gpio_enable(SYNAPTICS_ATTN_GPIO);
-		gpio_request(SYNAPTICS_ATTN_GPIO, "synaptics-irq");
-		gpio_direction_input(SYNAPTICS_ATTN_GPIO);
+	tegra_gpio_enable(SYNAPTICS_ATTN_GPIO);
+	gpio_request(SYNAPTICS_ATTN_GPIO, "synaptics-irq");
+	gpio_direction_input(SYNAPTICS_ATTN_GPIO);
 
-		tegra_gpio_enable(SYNAPTICS_RESET_GPIO);
-		gpio_request(SYNAPTICS_RESET_GPIO, "synaptics-reset");
-		gpio_direction_output(SYNAPTICS_RESET_GPIO, 0);
+	tegra_gpio_enable(SYNAPTICS_RESET_GPIO);
+	gpio_request(SYNAPTICS_RESET_GPIO, "synaptics-reset");
+	gpio_direction_output(SYNAPTICS_RESET_GPIO, 0);
 
-		msleep(1);
-		gpio_set_value(SYNAPTICS_RESET_GPIO, 1);
-		msleep(100);
+	msleep(1);
+	gpio_set_value(SYNAPTICS_RESET_GPIO, 1);
+	msleep(100);
 	} else {
 		gpio_free(SYNAPTICS_ATTN_GPIO);
 		gpio_free(SYNAPTICS_RESET_GPIO);

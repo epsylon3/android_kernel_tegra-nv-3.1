@@ -299,7 +299,7 @@ static int max8907c_i2c_probe(struct i2c_client *i2c,
 	ret = mfd_add_devices(max8907c->dev, -1, cells, ARRAY_SIZE(cells),
 			      NULL, 0);
 	if (ret != 0) {
-		i2c_unregister_device(max8907c->i2c_rtc);
+	  	i2c_unregister_device(max8907c->i2c_rtc);
 		kfree(max8907c);
 		pr_debug("max8907c: failed to add MFD devices   %X\n", ret);
 		return ret;

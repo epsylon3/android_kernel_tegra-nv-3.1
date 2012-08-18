@@ -1743,7 +1743,13 @@ void change_console(struct vc_data *new_vc)
 
 /* Perform a kernel triggered VT switch for suspend/resume */
 
+#if 1 /* disable vt switch to avoid waiting for events because it's for kernel message re-diretion */
+static int disable_vt_switch = 1;    /* SNMC_p.chauhan  */
+#else
 static int disable_vt_switch;
+#endif
+
+//static int disable_vt_switch;
 
 int vt_move_to_console(unsigned int vt, int alloc)
 {

@@ -276,10 +276,10 @@ static inline int max77663_i2c_write(struct i2c_client *client, u8 addr,
 				if (CHECK_ONOFF_CFG1(buf[i - 1], *src8))
 					buf[i] = *src8++ & ~ONOFF_PWR_OFF_MASK;
 				else
-					buf[i] = *src8++;
+				buf[i] = *src8++;
 			} else {
 				buf[i] = addr++;
-			}
+		}
 		}
 		bytes = (bytes * 2) - 1;
 	}

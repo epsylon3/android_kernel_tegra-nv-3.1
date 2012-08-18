@@ -96,9 +96,17 @@ static int tegra_camera_disable_clk(struct tegra_camera_dev *dev)
 
 static int tegra_camera_enable_emc(struct tegra_camera_dev *dev)
 {
+	/*
+	 * tegra_camera wasn't added as a user of emc_clk until 3x.
+	 * set to 150 MHz, will likely need to be increased as we support
+	 * sensors with higher framerates and resolutions.
+	 */
 	clk_enable(dev->emc_clk);
+
 #ifdef CONFIG_ARCH_TEGRA_2x_SOC
 	clk_set_rate(dev->emc_clk, 300000000);
+#else
+	clk_set_rate(dev->emc_clk, 150000000);
 #endif
 	return 0;
 }
@@ -122,8 +130,7 @@ static int tegra_camera_clk_set_rate(struct tegra_camera_dev *dev)
 		return -EINVAL;
 	}
 
-	if (info->id != TEGRA_CAMERA_MODULE_VI &&
-		info->id != TEGRA_CAMERA_MODULE_EMC) {
+	if (info->id != TEGRA_CAMERA_MODULE_VI) {
 		dev_err(dev->dev,
 				"%s: set rate only aplies to vi module %d\n",
 				__func__, info->id);
@@ -137,24 +144,22 @@ static int tegra_camera_clk_set_rate(struct tegra_camera_dev *dev)
 	case TEGRA_CAMERA_VI_SENSOR_CLK:
 		clk = dev->vi_sensor_clk;
 		break;
-	case TEGRA_CAMERA_EMC_CLK:
-		clk = dev->emc_clk;
-#ifndef CONFIG_ARCH_TEGRA_2x_SOC
-		dev_dbg(dev->dev, "%s: emc_clk rate=%lu\n",
-			__func__, info->rate);
-		clk_set_rate(dev->emc_clk, info->rate);
-#endif
-		goto set_rate_end;
 	default:
 		dev_err(dev->dev,
 				"%s: invalid clk id for set rate %d\n",
 				__func__, info->clk_id);
 		return -EINVAL;
 	}
-
+/*
+#ifdef CONFIG_MACH_SAMSUNG_VARIATION_TEGRA
+	if (info->clk_id == TEGRA_CAMERA_VI_SENSOR_CLK)
+		clk_set_rate(clk, 24000000);
+	else
+#endif
+*/
 	clk_parent = clk_get_parent(clk);
 	parent_rate = clk_get_rate(clk_parent);
-	dev_dbg(dev->dev, "%s: clk_id=%d, parent_rate=%lu, clk_rate=%lu\n",
+	printk(KERN_INFO "%s: clk_id=%d, parent_rate=%lu, clk_rate=%lu\n",
 			__func__, info->clk_id, parent_rate, info->rate);
 	parent_div_rate = parent_rate;
 	parent_div_rate_pre = parent_rate;
@@ -169,7 +174,7 @@ static int tegra_camera_clk_set_rate(struct tegra_camera_dev *dev)
 		parent_div_rate = clk_round_rate(clk, parent_div_rate-1);
 	}
 
-	dev_dbg(dev->dev, "%s: set_rate=%lu",
+	printk(KERN_INFO "%s: set_rate=%lu",
 			__func__, parent_div_rate_pre);
 
 	clk_set_rate(clk, parent_div_rate_pre);
@@ -190,9 +195,8 @@ static int tegra_camera_clk_set_rate(struct tegra_camera_dev *dev)
 #endif
 	}
 
-set_rate_end:
 	info->rate = clk_get_rate(clk);
-	dev_dbg(dev->dev, "%s: get_rate=%lu",
+	printk(KERN_INFO "%s: get_rate=%lu",
 			__func__, info->rate);
 	return 0;
 
@@ -204,23 +208,23 @@ static int tegra_camera_power_on(struct tegra_camera_dev *dev)
 
 	dev_dbg(dev->dev, "%s++\n", __func__);
 
-	/* Enable external power */
-	if (dev->reg) {
-		ret = regulator_enable(dev->reg);
-		if (ret) {
-			dev_err(dev->dev,
-				"%s: enable csi regulator failed.\n",
-				__func__);
-			return ret;
+		/* Enable external power */
+		if (dev->reg) {
+			ret = regulator_enable(dev->reg);
+			if (ret) {
+				dev_err(dev->dev,
+					"%s: enable csi regulator failed.\n",
+					__func__);
+				return ret;
+			}
 		}
-	}
 #ifndef CONFIG_ARCH_TEGRA_2x_SOC
-	/* Unpowergate VE */
-	ret = tegra_unpowergate_partition(TEGRA_POWERGATE_VENC);
-	if (ret)
-		dev_err(dev->dev,
-			"%s: unpowergate failed.\n",
-			__func__);
+		/* Unpowergate VE */
+		ret = tegra_unpowergate_partition(TEGRA_POWERGATE_VENC);
+		if (ret)
+			dev_err(dev->dev,
+				"%s: unpowergate failed.\n",
+				__func__);
 #endif
 	dev->power_on = 1;
 	return ret;
@@ -233,23 +237,23 @@ static int tegra_camera_power_off(struct tegra_camera_dev *dev)
 	dev_dbg(dev->dev, "%s++\n", __func__);
 
 #ifndef CONFIG_ARCH_TEGRA_2x_SOC
-	/* Powergate VE */
-	ret = tegra_powergate_partition(TEGRA_POWERGATE_VENC);
-	if (ret)
-		dev_err(dev->dev,
-			"%s: powergate failed.\n",
-			__func__);
-#endif
-	/* Disable external power */
-	if (dev->reg) {
-		ret = regulator_disable(dev->reg);
-		if (ret) {
+		/* Powergate VE */
+		ret = tegra_powergate_partition(TEGRA_POWERGATE_VENC);
+		if (ret)
 			dev_err(dev->dev,
-				"%s: disable csi regulator failed.\n",
+				"%s: powergate failed.\n",
 				__func__);
-			return ret;
+#endif
+		/* Disable external power */
+		if (dev->reg) {
+			ret = regulator_disable(dev->reg);
+			if (ret) {
+				dev_err(dev->dev,
+					"%s: disable csi regulator failed.\n",
+					__func__);
+				return ret;
+			}
 		}
-	}
 	dev->power_on = 0;
 	return ret;
 }
@@ -261,17 +265,19 @@ static long tegra_camera_ioctl(struct file *file,
 	struct tegra_camera_dev *dev = file->private_data;
 
 	/* first element of arg must be u32 with id of module to talk to */
-	if (copy_from_user(&id, (const void __user *)arg, sizeof(uint))) {
-		dev_err(dev->dev,
-				"%s: Failed to copy arg from user", __func__);
-		return -EFAULT;
-	}
+	if (cmd != TEGRA_CAMERA_IOCTL_SENSOR_FW_FOR_SAMSUNG) {
+		if (copy_from_user(&id, (const void __user *)arg, sizeof(uint))) {
+			dev_err(dev->dev,
+					"%s: Failed to copy arg from user", __func__);
+			return -EFAULT;
+		}
 
-	if (id >= TEGRA_CAMERA_MODULE_MAX) {
-		dev_err(dev->dev,
-				"%s: Invalid id to tegra isp ioctl%d\n",
-				__func__, id);
-		return -EINVAL;
+		if (id >= TEGRA_CAMERA_MODULE_MAX) {
+			dev_err(dev->dev,
+					"%s: Invalid id to tegra isp ioctl%d\n",
+					__func__, id);
+			return -EINVAL;
+		}
 	}
 
 	switch (cmd) {
@@ -285,19 +291,26 @@ static long tegra_camera_ioctl(struct file *file,
 	case TEGRA_CAMERA_IOCTL_RESET:
 		return 0;
 	case TEGRA_CAMERA_IOCTL_CLK_SET_RATE:
+	case TEGRA_CAMERA_IOCTL_SENSOR_FW_FOR_SAMSUNG:
 	{
 		int ret;
-
-		if (copy_from_user(&dev->info, (const void __user *)arg,
-				   sizeof(struct tegra_camera_clk_info))) {
-			dev_err(dev->dev,
-				"%s: Failed to copy arg from user\n", __func__);
-			return -EFAULT;
+		if (cmd == TEGRA_CAMERA_IOCTL_SENSOR_FW_FOR_SAMSUNG) {
+			dev->info.id = TEGRA_CAMERA_MODULE_VI;
+			dev->info.clk_id = TEGRA_CAMERA_VI_SENSOR_CLK;
+			dev->info.rate = 24000000;
+		} else {
+			if (copy_from_user(&dev->info, (const void __user *)arg,
+					   sizeof(struct tegra_camera_clk_info))) {
+				dev_err(dev->dev,
+					"%s: Failed to copy arg from user\n", __func__);
+				return -EFAULT;
+			}
 		}
 		ret = tegra_camera_clk_set_rate(dev);
 		if (ret)
 			return ret;
-		if (copy_to_user((void __user *)arg, &dev->info,
+		if (cmd != TEGRA_CAMERA_IOCTL_SENSOR_FW_FOR_SAMSUNG &&
+				copy_to_user((void __user *)arg, &dev->info,
 				 sizeof(struct tegra_camera_clk_info))) {
 			dev_err(dev->dev,
 				"%s: Failed to copy arg to user\n", __func__);
@@ -354,7 +367,7 @@ static int tegra_camera_release(struct inode *inode, struct file *file)
 	dev_info(dev->dev, "%s\n", __func__);
 
 
-	mutex_lock(&dev->tegra_camera_lock);
+		mutex_lock(&dev->tegra_camera_lock);
 	/* disable HW clock */
 	ret = tegra_camera_disable_clk(dev);
 	if (ret)
@@ -369,7 +382,7 @@ static int tegra_camera_release(struct inode *inode, struct file *file)
 		goto release_exit;
 
 release_exit:
-	mutex_unlock(&dev->tegra_camera_lock);
+		mutex_unlock(&dev->tegra_camera_lock);
 	WARN_ON(!atomic_xchg(&dev->in_use, 0));
 	return 0;
 }
@@ -519,7 +532,7 @@ static int tegra_camera_suspend(struct platform_device *pdev, pm_message_t state
 		ret = -EBUSY;
 		dev_err(&pdev->dev,
 		"tegra_camera cannot suspend, "
-		"application is holding on to camera. \n");
+		"application is holding on to camera.\n");
 	}
 	mutex_unlock(&dev->tegra_camera_lock);
 

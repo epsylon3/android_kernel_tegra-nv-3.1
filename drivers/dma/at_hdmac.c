@@ -999,7 +999,7 @@ atc_tx_status(struct dma_chan *chan,
 	}
 
 	last_complete = chan->completed_cookie;
-	last_used = chan->cookie;
+		last_used = chan->cookie;
 
 	spin_unlock_bh(&atchan->lock);
 

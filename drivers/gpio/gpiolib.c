@@ -1646,14 +1646,14 @@ void __gpio_set_value(unsigned gpio, int value)
 	struct gpio_chip	*chip;
 
 	chip = gpio_to_chip(gpio);
-	WARN_ON(chip->can_sleep);
+	/* WARN_ON(chip->can_sleep); */
 	trace_gpio_value(gpio, 0, value);
 	if (test_bit(FLAG_OPEN_DRAIN,  &gpio_desc[gpio].flags))
 		_gpio_set_open_drain_value(gpio, chip, value);
 	else if (test_bit(FLAG_OPEN_SOURCE,  &gpio_desc[gpio].flags))
 		_gpio_set_open_source_value(gpio, chip, value);
 	else
-		chip->set(chip, gpio - chip->base, value);
+	chip->set(chip, gpio - chip->base, value);
 }
 EXPORT_SYMBOL_GPL(__gpio_set_value);
 
@@ -1725,7 +1725,7 @@ void gpio_set_value_cansleep(unsigned gpio, int value)
 	else if (test_bit(FLAG_OPEN_SOURCE,  &gpio_desc[gpio].flags))
 		_gpio_set_open_source_value(gpio, chip, value);
 	else
-		chip->set(chip, gpio - chip->base, value);
+	chip->set(chip, gpio - chip->base, value);
 }
 EXPORT_SYMBOL_GPL(gpio_set_value_cansleep);
 

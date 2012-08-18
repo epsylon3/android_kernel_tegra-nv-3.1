@@ -223,8 +223,8 @@ ENDPROC(cpu_v7_set_pte_ext)
 /*
  * Debug context:
  *	8 CP14 registers
- *	16x2 CP14 breakpoint registers (maximum)
- *	16x2 CP14 watchpoint registers (maximum)
+ * 16x2 CP14 breakpoint registers (maximum)
+ * 16x2 CP14 watchpoint registers (maximum)
  */
 .equ	cpu_v7_debug_suspend_size, (4 * (8 + (16 * 2) + (16 * 2)))
 

@@ -30,21 +30,23 @@
 #include <linux/file.h>
 #include <linux/workqueue.h>
 
-#include <asm/atomic.h>
+#include <linux/atomic.h>
 
 #include <video/tegrafb.h>
 
 #include <mach/dc.h>
 #include <mach/fb.h>
 #include <linux/nvhost.h>
-#include <linux/nvmap.h>
+#include <mach/nvmap.h>
 
 #include "host/dev.h"
 #include "nvmap/nvmap.h"
 #include "dc/dc_priv.h"
 
+#include "cmc623.h"
+
 /* Pad pitch to 16-byte boundary. */
-#define TEGRA_LINEAR_PITCH_ALIGNMENT 32
+#define TEGRA_LINEAR_PITCH_ALIGNMENT 16
 
 struct tegra_fb_info {
 	struct tegra_dc_win	*win;
@@ -299,6 +301,10 @@ static int tegra_fb_blank(int blank, struct fb_info *info)
 		dev_dbg(&tegra_fb->ndev->dev, "unblank\n");
 		tegra_fb->win->flags = TEGRA_WIN_FLAG_ENABLED;
 		tegra_dc_enable(tegra_fb->win->dc);
+
+                /* Skip cmc623 operation in HDMI case: id == 1*/
+                if (tegra_fb->ndev->id != 1)
+                        cmc623_resume(NULL);
 		return 0;
 
 	case FB_BLANK_NORMAL:
@@ -309,6 +315,9 @@ static int tegra_fb_blank(int blank, struct fb_info *info)
 	case FB_BLANK_VSYNC_SUSPEND:
 	case FB_BLANK_HSYNC_SUSPEND:
 	case FB_BLANK_POWERDOWN:
+		/* Skip cmc623 operation in HDMI case: id == 1*/
+		if (tegra_fb->ndev->id != 1)
+			cmc623_suspend(NULL);
 		dev_dbg(&tegra_fb->ndev->dev, "blank - powerdown\n");
 		tegra_dc_disable(tegra_fb->win->dc);
 		return 0;
@@ -527,7 +536,6 @@ struct tegra_fb_info *tegra_fb_register(struct nvhost_device *ndev,
 	unsigned long fb_size = 0;
 	unsigned long fb_phys = 0;
 	int ret = 0;
-	unsigned stride;
 
 	win = tegra_dc_get_window(dc, fb_data->win);
 	if (!win) {
@@ -561,11 +569,6 @@ struct tegra_fb_info *tegra_fb_register(struct nvhost_device *ndev,
 		tegra_fb->valid = true;
 	}
 
-	stride = tegra_dc_get_stride(dc, 0);
-	if (!stride) /* default to pad the stride to 16-byte boundary. */
-		stride = round_up(info->fix.line_length,
-			TEGRA_LINEAR_PITCH_ALIGNMENT);
-
 	info->fbops = &tegra_fb_ops;
 	info->pseudo_palette = pseudo_palette;
 	info->screen_base = fb_base;
@@ -580,7 +583,9 @@ struct tegra_fb_info *tegra_fb_register(struct nvhost_device *ndev,
 	info->fix.smem_start	= fb_phys;
 	info->fix.smem_len	= fb_size;
 	info->fix.line_length = fb_data->xres * fb_data->bits_per_pixel / 8;
-	info->fix.line_length = stride;
+	/* Pad the stride to 16-byte boundary. */
+	info->fix.line_length = round_up(info->fix.line_length,
+					TEGRA_LINEAR_PITCH_ALIGNMENT);
 
 	info->var.xres			= fb_data->xres;
 	info->var.yres			= fb_data->yres;
@@ -641,7 +646,7 @@ struct tegra_fb_info *tegra_fb_register(struct nvhost_device *ndev,
 		if (dc->out->flags & TEGRA_DC_OUT_ONE_SHOT_MODE)
 			info->var.pixclock = KHZ2PICOS(mode->rated_pclk / 1000);
 		else
-			info->var.pixclock = KHZ2PICOS(mode->pclk / 1000);
+		info->var.pixclock = KHZ2PICOS(mode->pclk / 1000);
 		info->var.left_margin = mode->h_back_porch;
 		info->var.right_margin = mode->h_front_porch;
 		info->var.upper_margin = mode->v_back_porch;

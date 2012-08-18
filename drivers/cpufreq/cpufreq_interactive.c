@@ -445,9 +445,9 @@ static int cpufreq_interactive_up_task(void *data)
 					max_freq = pjcpu->target_freq;
 			}
 
-			__cpufreq_driver_target(pcpu->policy,
-						max_freq,
-						CPUFREQ_RELATION_H);
+				__cpufreq_driver_target(pcpu->policy,
+							max_freq,
+							CPUFREQ_RELATION_H);
 			mutex_unlock(&set_speed_lock);
 
 			pcpu->freq_change_time_in_idle =
@@ -493,8 +493,8 @@ static void cpufreq_interactive_freq_down(struct work_struct *work)
 				max_freq = pjcpu->target_freq;
 		}
 
-		__cpufreq_driver_target(pcpu->policy, max_freq,
-					CPUFREQ_RELATION_H);
+			__cpufreq_driver_target(pcpu->policy, max_freq,
+						CPUFREQ_RELATION_H);
 
 		mutex_unlock(&set_speed_lock);
 		pcpu->freq_change_time_in_idle =
@@ -543,7 +543,7 @@ static ssize_t store_boost_factor(struct kobject *kobj,
 	if (ret < 0)
 		return ret;
 	boost_factor = val;
-	return count;
+		return count;
 }
 
 static struct global_attr boost_factor_attr = __ATTR(boost_factor, 0644,
@@ -582,7 +582,7 @@ static ssize_t store_max_boost(struct kobject *kobj,
 	if (ret < 0)
 		return ret;
 	max_boost = val;
-	return count;
+		return count;
 }
 
 static struct global_attr max_boost_attr = __ATTR(max_boost, 0644,
@@ -605,7 +605,7 @@ static ssize_t store_sustain_load(struct kobject *kobj,
 	if (ret < 0)
 		return ret;
 	sustain_load = val;
-	return count;
+		return count;
 }
 
 static struct global_attr sustain_load_attr = __ATTR(sustain_load, 0644,

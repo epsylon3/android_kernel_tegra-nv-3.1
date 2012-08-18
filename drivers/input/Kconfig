@@ -170,6 +170,11 @@ config INPUT_KEYRESET
 	  To compile this driver as a module, choose M here: the
 	  module will be called keyreset.
 
+config SAMSUNG_INPUT
+	tristate "Samsung input devices"
+	depends on INPUT
+	default y
+
 comment "Input Device Drivers"
 
 source "drivers/input/keyboard/Kconfig"

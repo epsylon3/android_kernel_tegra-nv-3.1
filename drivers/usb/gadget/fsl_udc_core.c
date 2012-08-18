@@ -385,6 +385,7 @@ static int dr_controller_setup(struct fsl_udc *udc)
 	tmp |= USB_MODE_CTRL_MODE_DEVICE;
 	/* Disable Setup Lockout */
 	tmp |= USB_MODE_SETUP_LOCK_OFF;
+	tmp |= USB_MODE_STREAM_DISABLE;
 	if (udc->pdata->es)
 		tmp |= USB_MODE_ES;
 	fsl_writel(tmp, &dr_regs->usbmode);
@@ -486,6 +487,7 @@ static void dr_controller_run(struct fsl_udc *udc)
 	/* Set the controller as device mode */
 	temp = fsl_readl(&dr_regs->usbmode);
 	temp |= USB_MODE_CTRL_MODE_DEVICE;
+	temp |= USB_MODE_STREAM_DISABLE;
 	fsl_writel(temp, &dr_regs->usbmode);
 
 	/* Set controller to Run */
@@ -881,12 +883,15 @@ static void fsl_queue_td(struct fsl_ep *ep, struct fsl_req *req)
 
 		if (tmp_stat)
 			goto out;
+		else if (!(dQH->next_dtd_ptr & cpu_to_le32(DTD_NEXT_TERMINATE)))
+			goto prime;
 	}
 
 	/* Write dQH next pointer and terminate bit to 0 */
 	temp = req->head->td_dma & EP_QUEUE_HEAD_NEXT_POINTER_MASK;
 	dQH->next_dtd_ptr = cpu_to_hc32(temp);
 
+prime:
 	/* Clear active and halt bit */
 	temp = cpu_to_hc32(~(EP_QUEUE_HEAD_STATUS_ACTIVE
 			| EP_QUEUE_HEAD_STATUS_HALT));
@@ -1402,6 +1407,19 @@ static int fsl_vbus_session(struct usb_gadget *gadget, int is_active)
 
 	udc = container_of(gadget, struct fsl_udc, gadget);
 
+	mutex_lock(&udc->mutex);
+
+	if (udc->is_usb_ready) {
+		printk(KERN_DEBUG "usb: %s, ready vbus_active: %d, is_active: %d\n",
+				__func__, udc->vbus_active, is_active);
+	} else { /* USB is not ready to enable USB PHY */
+		printk(KERN_DEBUG "usb: %s, not ready vbus_active : %d, is_active: %d\n",
+				__func__, udc->vbus_active, is_active);
+		udc->vbus_active = is_active;
+		mutex_unlock(&udc->mutex);
+		return 0;
+	}
+
 	VDBG("VBUS %s", is_active ? "on" : "off");
 	if (udc->vbus_active && !is_active) {
 		/* If cable disconnected, cancel any delayed work */
@@ -1444,6 +1462,8 @@ static int fsl_vbus_session(struct usb_gadget *gadget, int is_active)
 		schedule_delayed_work(&udc->work,
 			USB_CHARGER_DETECTION_WAIT_TIME_MS);
 	}
+
+	mutex_unlock(&udc->mutex);
 	return 0;
 }
 
@@ -2929,6 +2949,27 @@ static int __init struct_ep_setup(struct fsl_udc *udc, unsigned char index,
 	return 0;
 }
 
+static void usb_ready(struct work_struct *work)
+{
+	struct fsl_udc *dev =
+	    container_of(work, struct fsl_udc, usb_ready_work.work);
+
+	if (!dev) {
+		printk(KERN_DEBUG "usb: %s dev is NULL\n", __func__);
+		return ;
+	}
+
+	printk(KERN_DEBUG "usb: %s vbus_active=%d\n",
+			__func__, dev->vbus_active);
+
+	dev->is_usb_ready = true;
+
+	if (dev->vbus_active) {
+		dev->vbus_active = 0;
+		fsl_vbus_session(&dev->gadget, 1);
+	}
+}
+
 /* Driver probe function
  * all intialization operations implemented here except enabling usb_intr reg
  * board setup should have been done in the platform code
@@ -3112,6 +3153,12 @@ static int __init fsl_udc_probe(struct platform_device *pdev)
 		goto err_del_udc;
 
 	create_proc_file();
+
+	INIT_DELAYED_WORK(&udc_controller->usb_ready_work, usb_ready);
+	schedule_delayed_work(&udc_controller->usb_ready_work,
+		msecs_to_jiffies(20000));
+	mutex_init(&udc_controller->mutex);
+
 #ifdef CONFIG_TEGRA_GADGET_BOOST_CPU_FREQ
 	boost_cpufreq_work_flag = 1;
 	ep_queue_request_count = 0;
@@ -3209,6 +3256,9 @@ static int __exit fsl_udc_remove(struct platform_device *pdev)
 
 	/* DR has been stopped in usb_gadget_unregister_driver() */
 	remove_proc_file();
+
+	cancel_delayed_work(&udc_controller->usb_ready_work);
+	mutex_destroy(&udc_controller->mutex);
 
 	/* Free allocated memory */
 	kfree(udc_controller->status_req->req.buf);

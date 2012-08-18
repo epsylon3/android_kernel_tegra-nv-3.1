@@ -161,7 +161,7 @@ bool tegra3_lp2_is_allowed(struct cpuidle_device *dev,
 		return false;
 #endif
 	if ((dev->cpu == 0)  && (!tegra3_rail_off_is_allowed()))
-		return false;
+			return false;
 
 	request = ktime_to_us(tick_nohz_get_sleep_length());
 	if (state->exit_latency != lp2_exit_latencies[cpu_number(dev->cpu)]) {
@@ -271,31 +271,31 @@ static void tegra3_idle_enter_lp2_cpu_0(struct cpuidle_device *dev,
 #endif
 
 	sleep_time = request -
-		lp2_exit_latencies[cpu_number(dev->cpu)];
+			lp2_exit_latencies[cpu_number(dev->cpu)];
 
-	bin = time_to_bin((u32)request / 1000);
-	idle_stats.tear_down_count[cpu_number(dev->cpu)]++;
-	idle_stats.lp2_count++;
-	idle_stats.lp2_count_bin[bin]++;
+		bin = time_to_bin((u32)request / 1000);
+		idle_stats.tear_down_count[cpu_number(dev->cpu)]++;
+		idle_stats.lp2_count++;
+		idle_stats.lp2_count_bin[bin]++;
 
-	trace_power_start(POWER_CSTATE, 2, dev->cpu);
-	clockevents_notify(CLOCK_EVT_NOTIFY_BROADCAST_ENTER, &dev->cpu);
-	if (!is_lp_cluster())
-		tegra_dvfs_rail_off(tegra_cpu_rail, entry_time);
+		trace_power_start(POWER_CSTATE, 2, dev->cpu);
+		clockevents_notify(CLOCK_EVT_NOTIFY_BROADCAST_ENTER, &dev->cpu);
+		if (!is_lp_cluster())
+			tegra_dvfs_rail_off(tegra_cpu_rail, entry_time);
 
-	if (tegra_idle_lp2_last(sleep_time, 0) == 0)
-		sleep_completed = true;
-	else {
-		int irq = tegra_gic_pending_interrupt();
-		idle_stats.lp2_int_count[irq]++;
-	}
+		if (tegra_idle_lp2_last(sleep_time, 0) == 0)
+			sleep_completed = true;
+		else {
+			int irq = tegra_gic_pending_interrupt();
+			idle_stats.lp2_int_count[irq]++;
+		}
 
-	clockevents_notify(CLOCK_EVT_NOTIFY_BROADCAST_EXIT, &dev->cpu);
-	exit_time = ktime_get();
-	if (!is_lp_cluster())
-		tegra_dvfs_rail_on(tegra_cpu_rail, exit_time);
-	idle_stats.in_lp2_time[cpu_number(dev->cpu)] +=
-		ktime_to_us(ktime_sub(exit_time, entry_time));
+		clockevents_notify(CLOCK_EVT_NOTIFY_BROADCAST_EXIT, &dev->cpu);
+		exit_time = ktime_get();
+		if (!is_lp_cluster())
+			tegra_dvfs_rail_on(tegra_cpu_rail, exit_time);
+		idle_stats.in_lp2_time[cpu_number(dev->cpu)] +=
+			ktime_to_us(ktime_sub(exit_time, entry_time));
 
 	if (multi_cpu_entry)
 		tegra3_lp2_restore_affinity();
@@ -418,8 +418,8 @@ void tegra3_idle_lp2(struct cpuidle_device *dev,
 
 	if (dev->cpu == 0) {
 		if (last_cpu)
-			tegra3_idle_enter_lp2_cpu_0(dev, state, request);
-		else
+		tegra3_idle_enter_lp2_cpu_0(dev, state, request);
+	else
 			tegra3_lp3_fall_back(dev);
 	} else
 		tegra3_idle_enter_lp2_cpu_n(dev, state, request);

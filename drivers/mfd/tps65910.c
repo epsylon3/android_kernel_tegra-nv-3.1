@@ -44,7 +44,7 @@ static int tps65910_i2c_read(struct tps65910 *tps65910, u8 reg,
 }
 
 static int tps65910_i2c_write(struct tps65910 *tps65910, u8 reg,
-				  int bytes, void *src)
+				   int bytes, void *src)
 {
 	return regmap_bulk_write(tps65910->regmap, reg, src, bytes);
 }
@@ -58,7 +58,7 @@ EXPORT_SYMBOL_GPL(tps65910_set_bits);
 int tps65910_clear_bits(struct tps65910 *tps65910, u8 reg, u8 mask)
 {
 	return regmap_update_bits(tps65910->regmap, reg, mask, 0);
-}
+	}
 EXPORT_SYMBOL_GPL(tps65910_clear_bits);
 
 static bool is_volatile_reg(struct device *dev, unsigned int reg)

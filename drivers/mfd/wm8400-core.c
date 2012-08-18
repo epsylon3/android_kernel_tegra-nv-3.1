@@ -127,7 +127,7 @@ static int wm8400_read(struct wm8400 *wm8400, u8 reg, int num_regs, u16 *dest)
 		if (reg_data[i].vol) {
 			ret = regmap_bulk_read(wm8400->regmap, reg, dest,
 					       num_regs);
-			return ret;
+				return ret;
 		}
 
 	/* Otherwise use the cache */

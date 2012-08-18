@@ -293,7 +293,7 @@ static int tegra_rt5640_jack_notifier(struct notifier_block *self,
 									    6))
 				status_jack = rt5640_headset_detect(codec, 1);
 
-			machine->jack_status &= ~SND_JACK_HEADPHONE;
+		machine->jack_status &= ~SND_JACK_HEADPHONE;
 			machine->jack_status &= ~SND_JACK_MICROPHONE;
 			if (status_jack == RT5639_HEADPHO_DET ||
 			    status_jack == RT5640_HEADPHO_DET)
@@ -306,7 +306,7 @@ static int tegra_rt5640_jack_notifier(struct notifier_block *self,
 					machine->jack_status |=
 							SND_JACK_MICROPHONE;
 			}
-		} else {
+	} else {
 			/* Disable ext mic; enable signal is active-low */
 			gpio_direction_output(pdata->gpio_ext_mic_en, 1);
 			if (!strncmp(machine->pdata->codec_name, "rt5639", 6))
@@ -316,7 +316,7 @@ static int tegra_rt5640_jack_notifier(struct notifier_block *self,
 				rt5640_headset_detect(codec, 0);
 
 			machine->jack_status &= ~SND_JACK_HEADPHONE;
-			machine->jack_status &= ~SND_JACK_MICROPHONE;
+		machine->jack_status &= ~SND_JACK_MICROPHONE;
 		}
 	}
 

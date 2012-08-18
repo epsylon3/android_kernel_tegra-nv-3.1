@@ -59,6 +59,12 @@ MODULE_ALIAS("mmc:block");
 #define INAND_CMD38_ARG_SECTRIM1 0x81
 #define INAND_CMD38_ARG_SECTRIM2 0x88
 
+#define MMC_CMD_RETRIES 	10
+
+#ifdef	CONFIG_MACH_SAMSUNG_P4WIFI
+#define	MAX_BLK_WR_RETRIES	2
+#endif
+
 static DEFINE_MUTEX(block_mutex);
 
 /*
@@ -114,6 +120,9 @@ enum mmc_blk_status {
 	MMC_BLK_DATA_ERR,
 	MMC_BLK_CMD_ERR,
 	MMC_BLK_ABORT,
+#ifdef	CONFIG_MACH_SAMSUNG_P4WIFI
+	MMC_BLK_OEM_CMD_ERR,
+#endif
 };
 
 module_param(perdev_minors, int, 0444);
@@ -902,7 +911,11 @@ static int mmc_blk_err_check(struct mmc_card *card,
 			}
 			return MMC_BLK_DATA_ERR;
 		} else {
+		#ifdef	CONFIG_MACH_SAMSUNG_P4WIFI
+			return MMC_BLK_OEM_CMD_ERR;
+		#else
 			return MMC_BLK_CMD_ERR;
+		#endif
 		}
 	}
 
@@ -943,6 +956,7 @@ static void mmc_blk_rw_rq_prep(struct mmc_queue_req *mqrq,
 	if (!mmc_card_blockaddr(card))
 		brq->cmd.arg <<= 9;
 	brq->cmd.flags = MMC_RSP_SPI_R1 | MMC_RSP_R1 | MMC_CMD_ADTC;
+	brq->cmd.retries = MMC_CMD_RETRIES;
 	brq->data.blksz = 512;
 	brq->stop.opcode = MMC_STOP_TRANSMISSION;
 	brq->stop.arg = 0;
@@ -1059,6 +1073,9 @@ static int mmc_blk_issue_rw_rq(struct mmc_queue *mq, struct request *rqc)
 	struct mmc_queue_req *mq_rq;
 	struct request *req;
 	struct mmc_async_req *areq;
+#ifdef	CONFIG_MACH_SAMSUNG_P4WIFI
+	int write_retry = MAX_BLK_WR_RETRIES;
+#endif
 
 	if (!rqc && !mq->mqrq_prev->req)
 		return 0;
@@ -1102,6 +1119,17 @@ static int mmc_blk_issue_rw_rq(struct mmc_queue *mq, struct request *rqc)
 				goto cmd_abort;
 			}
 			break;
+#ifdef	CONFIG_MACH_SAMSUNG_P4WIFI
+		case MMC_BLK_OEM_CMD_ERR:
+			if (write_retry > 0) {
+				printk(KERN_ERR "%s:write error and retry (%d)\n",
+					rqc->rq_disk->disk_name,
+					MAX_BLK_WR_RETRIES - write_retry + 1);
+					write_retry--;
+					continue;
+			}
+			goto cmd_err;
+#endif
 		case MMC_BLK_CMD_ERR:
 			goto cmd_err;
 		case MMC_BLK_RETRY_SINGLE:

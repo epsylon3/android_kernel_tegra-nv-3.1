@@ -90,7 +90,7 @@ static void ll_device_want_to_wakeup(struct st_data_s *st_data)
  * enable ST LL */
 void st_ll_enable(struct st_data_s *ll)
 {
-        /* communicate to platform about chip enable */
+	/* communicate to platform about chip enable */
 #ifdef CONFIG_WAKELOCK
 	wake_lock(&ll->st_wk_lock);
 #endif
@@ -101,7 +101,7 @@ void st_ll_enable(struct st_data_s *ll)
  * disable ST LL */
 void st_ll_disable(struct st_data_s *ll)
 {
-        /* communicate to platform about chip disable */
+	/* communicate to platform about chip disable */
 #ifdef CONFIG_WAKELOCK
 	wake_unlock(&ll->st_wk_lock);
 #endif

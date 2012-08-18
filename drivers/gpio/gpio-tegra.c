@@ -191,7 +191,6 @@ static int tegra_gpio_get(struct gpio_chip *chip, unsigned offset)
 static int tegra_gpio_direction_input(struct gpio_chip *chip, unsigned offset)
 {
 	tegra_gpio_mask_write(GPIO_MSK_OE(offset), offset, 0);
-	tegra_gpio_enable(offset);
 	return 0;
 }
 
@@ -200,7 +199,6 @@ static int tegra_gpio_direction_output(struct gpio_chip *chip, unsigned offset,
 {
 	tegra_gpio_set(chip, offset, value);
 	tegra_gpio_mask_write(GPIO_MSK_OE(offset), offset, 1);
-	tegra_gpio_enable(offset);
 	return 0;
 }
 
@@ -215,20 +213,8 @@ static int tegra_gpio_to_irq(struct gpio_chip *chip, unsigned offset)
 	return TEGRA_GPIO_TO_IRQ(offset);
 }
 
-static int tegra_gpio_request(struct gpio_chip *chip, unsigned offset)
-{
-	return 0;
-}
-
-static void tegra_gpio_free(struct gpio_chip *chip, unsigned offset)
-{
-	tegra_gpio_disable(offset);
-}
-
 static struct gpio_chip tegra_gpio_chip = {
 	.label			= "tegra-gpio",
-	.request		= tegra_gpio_request,
-	.free			= tegra_gpio_free,
 	.direction_input	= tegra_gpio_direction_input,
 	.get			= tegra_gpio_get,
 	.direction_output	= tegra_gpio_direction_output,
@@ -347,6 +333,68 @@ static void tegra_gpio_irq_handler(unsigned int irq, struct irq_desc *desc)
 }
 
 #ifdef CONFIG_PM_SLEEP
+#include <mach/gpio-sec.h>
+
+struct sec_gpio_table_st sec_gpio_table;
+
+void tegra_set_sleep_gpio_table(void)
+{
+	int cnt;
+	struct sec_slp_gpio_cfg_st *sleep_gpio_table = sec_gpio_table.sleep_gpio_table;
+	int n_sleep_gpio_table = sec_gpio_table.n_sleep_gpio_table;
+
+	if(!sleep_gpio_table) {
+		pr_err("%s: gpio_table is null\n", __func__);
+		return;
+	}
+	
+	for (cnt = 0; cnt < n_sleep_gpio_table; cnt++) {
+		if (sleep_gpio_table[cnt].slp_ctrl == YES) {
+			tegra_gpio_enable(sleep_gpio_table[cnt].gpio);
+
+			if (sleep_gpio_table[cnt].dir == GPIO_OUTPUT) {
+				tegra_gpio_mask_write(GPIO_MSK_OE(sleep_gpio_table[cnt].gpio), sleep_gpio_table[cnt].gpio, 1);
+				if (sleep_gpio_table[cnt].val != GPIO_LEVEL_NONE) {
+					tegra_gpio_mask_write(GPIO_MSK_OUT(sleep_gpio_table[cnt].gpio),
+									sleep_gpio_table[cnt].gpio, sleep_gpio_table[cnt].val);
+				}
+			} else if (sleep_gpio_table[cnt].dir == GPIO_INPUT) {
+				tegra_gpio_mask_write(GPIO_MSK_OE(sleep_gpio_table[cnt].gpio), sleep_gpio_table[cnt].gpio, 0);
+			}
+		}
+	}
+}
+
+void tegra_set_gpio_init_table(void)
+{
+	int cnt;
+	struct sec_gpio_cfg_st *gpio_table = sec_gpio_table.init_gpio_table;
+	int n_gpio_table = sec_gpio_table.n_init_gpio_table;
+
+	if(!gpio_table) {
+		pr_err("%s: gpio_table is null\n", __func__);
+		return;
+	}
+	
+	for (cnt = 0; cnt < n_gpio_table; cnt++) {
+		if (gpio_table[cnt].attr == GPIO) {
+			tegra_gpio_enable(gpio_table[cnt].gpio);
+
+			if (gpio_table[cnt].dir == GPIO_OUTPUT) {
+				tegra_gpio_mask_write(GPIO_MSK_OE(gpio_table[cnt].gpio), gpio_table[cnt].gpio, 1);
+				if (gpio_table[cnt].val != GPIO_LEVEL_NONE) {
+					tegra_gpio_mask_write(GPIO_MSK_OUT(gpio_table[cnt].gpio), gpio_table[cnt].gpio, gpio_table[cnt].val);
+				}
+			} else if (gpio_table[cnt].dir == GPIO_INPUT) {
+				tegra_gpio_mask_write(GPIO_MSK_OE(gpio_table[cnt].gpio), gpio_table[cnt].gpio, 0);
+			} else {
+				tegra_gpio_disable(gpio_table[cnt].gpio);
+			}
+		} else {
+			tegra_gpio_disable(gpio_table[cnt].gpio);
+		}
+	}
+}
 static void tegra_gpio_resume(void)
 {
 	unsigned long flags;
@@ -392,6 +440,7 @@ static int tegra_gpio_suspend(void)
 	}
 	local_irq_restore(flags);
 
+	tegra_set_sleep_gpio_table();
 	return 0;
 }
 
@@ -453,6 +502,10 @@ static int __init tegra_gpio_init(void)
 	int i;
 	int j;
 
+	/* init the gpio when kernel booting. */
+	pr_info("%s()\n", __func__);
+	tegra_gpio_register_table(&sec_gpio_table);
+	tegra_set_gpio_init_table();
 	for (i = 0; i < ARRAY_SIZE(tegra_gpio_banks); i++) {
 		for (j = 0; j < 4; j++) {
 			int gpio = tegra_gpio_compose(i, j, 0);

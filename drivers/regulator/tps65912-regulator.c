@@ -607,7 +607,7 @@ static int tps65912_get_voltage_dcdc(struct regulator_dev *dev)
 }
 
 static int tps65912_set_voltage_dcdc_sel(struct regulator_dev *dev,
-					 unsigned selector)
+						unsigned selector)
 {
 	struct tps65912_reg *pmic = rdev_get_drvdata(dev);
 	struct tps65912 *mfd = pmic->mfd;
@@ -637,7 +637,7 @@ static int tps65912_get_voltage_ldo(struct regulator_dev *dev)
 }
 
 static int tps65912_set_voltage_ldo_sel(struct regulator_dev *dev,
-					unsigned selector)
+						unsigned selector)
 {
 	struct tps65912_reg *pmic = rdev_get_drvdata(dev);
 	struct tps65912 *mfd = pmic->mfd;

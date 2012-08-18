@@ -18,7 +18,7 @@
 #define __DRIVERS_VIDEO_TEGRA_DC_DSI_H__
 
 /* source of video data */
-enum {
+enum{
 	TEGRA_DSI_VIDEO_DRIVEN_BY_DC,
 	TEGRA_DSI_VIDEO_DRIVEN_BY_HOST,
 };
@@ -31,7 +31,7 @@ enum {
 /* DCS commands for command mode */
 #define DSI_ENTER_PARTIAL_MODE	0x12
 #define DSI_SET_PIXEL_FORMAT	0x3A
-#define DSI_AREA_COLOR_MODE	0x4C
+#define DSI_AREA_COLOR_MODE 	0x4C
 #define DSI_SET_PARTIAL_AREA	0x30
 #define DSI_SET_PAGE_ADDRESS	0x2B
 #define DSI_SET_ADDRESS_MODE	0x36
@@ -151,7 +151,7 @@ enum {
  * TODO: are DSI_HOST_DSI_CONTROL_CRC_RESET(RESET_CRC) and
  * DSI_HOST_DSI_CONTROL_HOST_TX_TRIG_SRC(IMMEDIATE) required for everyone?
  */
-#define HOST_DSI_CTRL_COMMON \
+#define HOST_DSI_CTRL_COMMON 	\
 			(DSI_HOST_DSI_CONTROL_PHY_CLK_DIV(DSI_PHY_CLK_DIV1) | \
 			DSI_HOST_DSI_CONTROL_ULTRA_LOW_POWER(NORMAL) | \
 			DSI_HOST_DSI_CONTROL_PERIPH_RESET(TEGRA_DSI_DISABLE) | \
@@ -171,26 +171,26 @@ enum {
 #define DSI_CTRL_HOST_DRIVEN	(DSI_CONTROL_VID_ENABLE(TEGRA_DSI_DISABLE) | \
 				DSI_CONTROL_HOST_ENABLE(TEGRA_DSI_ENABLE))
 
-#define DSI_CTRL_DC_DRIVEN	(DSI_CONTROL_VID_TX_TRIG_SRC(SOL) | \
+#define DSI_CTRL_DC_DRIVEN 	(DSI_CONTROL_VID_TX_TRIG_SRC(SOL) | \
 				DSI_CONTROL_VID_ENABLE(TEGRA_DSI_ENABLE) | \
 				DSI_CONTROL_HOST_ENABLE(TEGRA_DSI_DISABLE))
 
-#define DSI_CTRL_CMD_MODE	(DSI_CONTROL_VID_DCS_ENABLE(TEGRA_DSI_ENABLE))
+#define DSI_CTRL_CMD_MODE 	(DSI_CONTROL_VID_DCS_ENABLE(TEGRA_DSI_ENABLE))
 
-#define DSI_CTRL_VIDEO_MODE	(DSI_CONTROL_VID_DCS_ENABLE(TEGRA_DSI_DISABLE))
+#define DSI_CTRL_VIDEO_MODE 	(DSI_CONTROL_VID_DCS_ENABLE(TEGRA_DSI_DISABLE))
 
 
 enum {
-	CMD_VS		= 0x01,
+	CMD_VS 	= 0x01,
 	CMD_VE		= 0x11,
 
 	CMD_HS		= 0x21,
 	CMD_HE		= 0x31,
 
-	CMD_EOT		= 0x08,
-	CMD_NULL	= 0x09,
+	CMD_EOT 	= 0x08,
+	CMD_NULL 	= 0x09,
 	CMD_SHORTW	= 0x15,
-	CMD_BLNK	= 0x19,
+	CMD_BLNK 	= 0x19,
 	CMD_LONGW	= 0x39,
 
 	CMD_RGB	= 0x00,
@@ -358,13 +358,13 @@ struct dsi_phy_timing_inclk {
 	unsigned	t_hsprepare;
 	unsigned	t_datzero;
 
-	unsigned	t_clktrail;
-	unsigned	t_clkpost;
-	unsigned	t_clkzero;
-	unsigned	t_tlpx;
+	unsigned 	t_clktrail;
+	unsigned 	t_clkpost;
+	unsigned 	t_clkzero;
+	unsigned 	t_tlpx;
 
 	unsigned	t_clkpre;
-	unsigned	t_clkprepare;
+        unsigned        t_clkprepare;
 	unsigned	t_wakeup;
 
 	unsigned	t_taget;

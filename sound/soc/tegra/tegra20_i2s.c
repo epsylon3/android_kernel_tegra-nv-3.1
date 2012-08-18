@@ -251,9 +251,9 @@ static int tegra20_i2s_hw_params(struct snd_pcm_substream *substream,
 	tegra20_i2s_write(i2s, TEGRA20_I2S_TIMING, reg);
 
 	if (sample_size * params_channels(params) >= 32)
-		tegra20_i2s_write(i2s, TEGRA20_I2S_FIFO_SCR,
-			TEGRA20_I2S_FIFO_SCR_FIFO2_ATN_LVL_FOUR_SLOTS |
-			TEGRA20_I2S_FIFO_SCR_FIFO1_ATN_LVL_FOUR_SLOTS);
+	tegra20_i2s_write(i2s, TEGRA20_I2S_FIFO_SCR,
+		TEGRA20_I2S_FIFO_SCR_FIFO2_ATN_LVL_FOUR_SLOTS |
+		TEGRA20_I2S_FIFO_SCR_FIFO1_ATN_LVL_FOUR_SLOTS);
 	else
 		tegra20_i2s_write(i2s, TEGRA20_I2S_FIFO_SCR,
 			TEGRA20_I2S_FIFO_SCR_FIFO2_ATN_LVL_EIGHT_SLOTS |

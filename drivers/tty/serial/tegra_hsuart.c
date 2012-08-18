@@ -50,7 +50,7 @@
 #define BYTES_TO_ALIGN(x) ((unsigned long)(ALIGN((x), sizeof(u32))) - \
 	(unsigned long)(x))
 
-#define UART_RX_DMA_BUFFER_SIZE    (2048*8)
+#define UART_RX_DMA_BUFFER_SIZE    (2048*16)
 
 #define UART_LSR_FIFOE		0x80
 #define UART_LSR_TXFIFO_FULL	0x100
@@ -333,9 +333,16 @@ static void tegra_rx_dma_complete_callback(struct tegra_dma_req *req)
 	if (req->status == -TEGRA_DMA_REQ_ERROR_ABORTED)
 		return;
 
-	spin_unlock(&u->lock);
+	printk(KERN_ERR "%s: tegra_uart_%d: DMA_REQ: buf_stat(%d),stat(%d)\n",
+		__func__, req->instance, req->buffer_status, req->status);
+
+	/* Not out of sync err from dma_isr/dbl_dma */
+	if (req->status != -TEGRA_DMA_REQ_ERROR_STOPPED)
+		spin_unlock(&u->lock);
 	tty_flip_buffer_push(u->state->port.tty);
-	spin_lock(&u->lock);
+	/* Not out of sync err from dma_isr/dbl_dma */
+	if (req->status != -TEGRA_DMA_REQ_ERROR_STOPPED)
+		spin_lock(&u->lock);
 }
 
 /* Lock already taken */
@@ -571,16 +578,16 @@ static irqreturn_t tegra_uart_isr(int irq, void *data)
 			if (likely(t->use_rx_dma)) {
 				if (!is_rx_int) {
 					is_rx_int = true;
-					/* Disable interrups */
-					ier = t->ier_shadow;
-					ier |= UART_IER_RDI;
-					uart_writeb(t, ier, UART_IER);
+                                        /* Disable interrups */
+                                        ier = t->ier_shadow;
+                                        ier |= UART_IER_RDI;
+                                        uart_writeb(t, ier, UART_IER);
 					ier &= ~(UART_IER_RDI | UART_IER_RLSI |
 						UART_IER_RTOIE | UART_IER_EORD);
-					t->ier_shadow = ier;
-					uart_writeb(t, ier, UART_IER);
-				}
-			} else {
+                                        t->ier_shadow = ier;
+                                        uart_writeb(t, ier, UART_IER);
+                                }
+                        } else {
 				do_handle_rx_pio(t);
 
 				spin_unlock_irqrestore(&u->lock, flags);
@@ -754,10 +761,10 @@ static int tegra_uart_hw_init(struct tegra_uart_port *t)
 	if (t->use_rx_dma) {
 		/*
 		 * Initialize the UART for a simple default configuration
-		 * so that the receive DMA buffer may be enqueued */
+		  * so that the receive DMA buffer may be enqueued */
 		t->lcr_shadow = 3;  /* no parity, stop, 8 data bits */
 		tegra_set_baudrate(t, 115200);
-		t->fcr_shadow |= UART_FCR_DMA_SELECT;
+                t->fcr_shadow |= UART_FCR_DMA_SELECT;
 		uart_writeb(t, t->fcr_shadow, UART_FCR);
 		if (tegra_start_dma_rx(t)) {
 			dev_err(t->uport.dev, "Rx DMA enqueue failed\n");
@@ -900,13 +907,13 @@ static int tegra_startup(struct uart_port *u)
 
 	dev_dbg(u->dev, "Requesting IRQ %d\n", u->irq);
 	ret = request_irq(u->irq, tegra_uart_isr, IRQF_DISABLED,
-				t->port_name, t);
+		t->port_name, t);
 	if (ret) {
 		dev_err(u->dev, "Failed to register ISR for IRQ %d\n", u->irq);
 		goto fail;
 	}
 
-	dev_dbg(u->dev, "Started UART port %d\n", u->line);
+	dev_dbg(u->dev,"Started UART port %d\n", u->line);
 	return 0;
 fail:
 	dev_err(u->dev, "Tegra UART startup failed\n");
@@ -1638,7 +1645,7 @@ int tegra_uart_is_tx_empty(struct uart_port *uport)
 	return tegra_tx_empty(uport);
 }
 
-static struct platform_driver tegra_uart_platform_driver __refdata= {
+static struct platform_driver tegra_uart_platform_driver = {
 	.probe		= tegra_uart_probe,
 	.remove		= __devexit_p(tegra_uart_remove),
 	.suspend	= tegra_uart_suspend,
