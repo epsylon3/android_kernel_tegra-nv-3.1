@@ -39,12 +39,12 @@
 #include "gpio-names.h"
 #include "board.h"
 
-#if CONFIG_MHL_SII9234
+#ifdef CONFIG_MHL_SII9234
 #define n1_hdmi_hpd	TEGRA_GPIO_PN7
 #endif
 
 #ifdef CONFIG_TEGRA_DC
-#if CONFIG_MHL_SII9234
+#ifdef CONFIG_MHL_SII9234
 static struct regulator *n1_hdmi_reg = NULL;
 static struct regulator *n1_hdmi_pll = NULL;
 
@@ -103,7 +103,7 @@ static struct resource n1_disp1_resources[] = {
 	},
 };
 
-#if CONFIG_MHL_SII9234
+#ifdef CONFIG_MHL_SII9234
 static struct resource n1_disp2_resources[] = {
 	{
 		.name	= "irq",
@@ -191,7 +191,7 @@ static struct tegra_dc_out n1_disp1_out = {
 	.n_out_sel_configs = ARRAY_SIZE(n1_dc_out_pin_sel_config),
 };
 
-#if CONFIG_MHL_SII9234
+#ifdef CONFIG_MHL_SII9234
 static struct tegra_dc_out n1_disp2_out = {
 	.type		= TEGRA_DC_OUT_HDMI,
 	.flags		= TEGRA_DC_OUT_HOTPLUG_HIGH,
@@ -217,7 +217,7 @@ static struct tegra_fb_data n1_fb_data = {
 	.flags		= TEGRA_FB_FLIP_ON_PROBE,
 };
 
-#if CONFIG_MHL_SII9234
+#ifdef CONFIG_MHL_SII9234
 static struct tegra_fb_data n1_hdmi_fb_data = {
 	.win		= 0,
 	.xres		= 480,
@@ -243,7 +243,7 @@ static struct nvhost_device n1_disp1_device = {
 	},
 };
 
-#if CONFIG_MHL_SII9234
+#ifdef CONFIG_MHL_SII9234
 static struct tegra_dc_platform_data n1_disp2_pdata = {
 	.flags		= 0,
 	.default_out	= &n1_disp2_out,
@@ -361,7 +361,7 @@ int __init n1_panel_init(void)
 	int err;
 	struct resource __maybe_unused *res;
 
-#if CONFIG_MHL_SII9234
+#ifdef CONFIG_MHL_SII9234
 	tegra_gpio_enable(n1_hdmi_hpd);
 	gpio_request(n1_hdmi_hpd, "hdmi_hpd");
 	gpio_direction_input(n1_hdmi_hpd);
@@ -397,7 +397,7 @@ int __init n1_panel_init(void)
 		min(tegra_fb_size, tegra_bootloader_fb_size));
 
 #if defined(CONFIG_TEGRA_GRHOST) && defined(CONFIG_TEGRA_DC)
-#if CONFIG_MHL_SII9234
+#ifdef CONFIG_MHL_SII9234
 	res = nvhost_get_resource_byname(&n1_disp2_device,
 					 IORESOURCE_MEM, "fbmem");
 	res->start = tegra_fb2_start;
@@ -408,7 +408,7 @@ int __init n1_panel_init(void)
 	if (!err)
 		err = nvhost_device_register(&n1_disp1_device);
 
-#if CONFIG_MHL_SII9234
+#ifdef CONFIG_MHL_SII9234
 	if (!err)
 		err = nvhost_device_register(&n1_disp2_device);
 #endif
