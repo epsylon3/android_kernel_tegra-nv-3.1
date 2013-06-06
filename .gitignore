@@ -22,7 +22,6 @@
 *.lst
 *.symtypes
 *.order
-modules.builtin
 *.elf
 *.bin
 *.gz
@@ -32,18 +31,21 @@ modules.builtin
 *.lzo
 *.patch
 *.gcno
+*.str.tmp
+modules.builtin
+scripts/
 
 #
 # Top-level generic files
 #
-/tags
-/TAGS
-/linux
-/vmlinux
-/vmlinuz
-/System.map
-/Module.markers
-/Module.symvers
+tags
+TAGS
+linux
+vmlinux
+vmlinuz
+System.map
+Module.markers
+Module.symvers
 
 #
 # Debian directory (make deb-pkg)
@@ -59,8 +61,14 @@ modules.builtin
 #
 # Generated include files
 #
+include/asm
+include/asm-*/asm-offsets.h
 include/config
+include/linux/autoconf.h
+include/linux/compile.h
 include/linux/version.h
+include/linux/utsrelease.h
+include/linux/bounds.h
 include/generated
 arch/*/include/generated
 
