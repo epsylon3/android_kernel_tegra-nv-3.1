@@ -13,6 +13,8 @@
 #include <linux/mfd/wm8994/wm8994_pdata.h>
 #include <mach/tegra_das.h>
 
+#define AUDIO_COMMON_DEBUG	1
+
 /* Sources for AIF1/2 SYSCLK - use with set_dai_sysclk() */
 #define WM8994_SYSCLK_MCLK1 1
 #define WM8994_SYSCLK_MCLK2 2
@@ -26,16 +28,14 @@
 
 #include "wm8994_def.h"
 
-#define WM8994_SYSCLK_MCLK     1
-#define WM8994_SYSCLK_FLL      2
-
-#define AUDIO_COMMON_DEBUG	1
+#define WM8994_SYSCLK_MCLK	1
+#define WM8994_SYSCLK_FLL	2
 
 #define WM8994_FACTORY_LOOPBACK
 
-#define FM_PATH_DRC_BLOCK		0
+#define FM_PATH_DRC_BLOCK	0
 
-#define AUDIENCE_CODEC_MASTER		1
+#define AUDIENCE_CODEC_MASTER	1
 
 #define DEACTIVE		0x00
 #define PLAYBACK_ACTIVE		0x01
@@ -53,25 +53,25 @@ Codec Output Path BIT
 [12:15]	: For mode
 [16]		: For gain code
 */
-#define PLAYBACK_MODE	(0x01 << 12)
-#define VOICECALL_MODE	(0x01 << 13)
-#define RECORDING_MODE	(0x01 << 14)
-#define FMRADIO_MODE	(0x01 << 15)
+#define PLAYBACK_MODE		(0x01 << 12)
+#define VOICECALL_MODE		(0x01 << 13)
+#define RECORDING_MODE		(0x01 << 14)
+#define FMRADIO_MODE		(0x01 << 15)
 
 #define GAIN_DIVISION_BIT	(0x01 << 16)
-#define VOIPCALL_MODE	(0x01 << 17)	/* 0x20000 */
+#define VOIPCALL_MODE		(0x01 << 17)	/* 0x20000 */
 #define COMMON_SET_BIT		(0x01 << 0)
 #define PLAYBACK_RCV		(0x01 << 1)
 #define PLAYBACK_SPK		(0x01 << 2)
 #define PLAYBACK_HP		(0x01 << 3)
 #define PLAYBACK_BT		(0x01 << 4)
-#define PLAYBACK_SPK_HP	(0x01 << 5)
+#define PLAYBACK_SPK_HP		(0x01 << 5)
 #define PLAYBACK_RING_SPK	(0x01 << 6)
 #define PLAYBACK_RING_HP	(0x01 << 7)
 #define PLAYBACK_RING_SPK_HP	(0x01 << 8)
 #define PLAYBACK_HP_NO_MIC	(0x01 << 9)
 #define PLAYBACK_LINEOUT	(0x01 << 10)
-#define PLAYBACK_SPK_LINEOUT	(0x01 << 11) /* 0x800 */
+#define PLAYBACK_SPK_LINEOUT	(0x01 << 11)	/* 0x800 */
 
 #define VOICECALL_RCV		(0x01 << 1)
 #define VOICECALL_SPK		(0x01 << 2)
@@ -81,8 +81,8 @@ Codec Output Path BIT
 #if defined (CONFIG_MACH_BOSE_ATT)
 #define VOICECALL_RCV_AUDIENCE	(0x01 << 6)
 #define VOICECALL_SPK_AUDIENCE	(0x01 << 7)
-#define VOICECALL_RCV_HAC		(0x01 << 8)
-#define VOICECALL_HP_TTY		(0x01 << 9)
+#define VOICECALL_RCV_HAC	(0x01 << 8)
+#define VOICECALL_HP_TTY	(0x01 << 9)
 #endif
 
 #define RECORDING_MAIN		(0x01 << 1)
@@ -111,15 +111,15 @@ Codec Output Path BIT
 #define VOIPCALL_SUBMIC_OTHER	(0x01 << 11)
 #define VOIPCALL_HPMIC_OTHER	(0x01 << 12)
 
-#define FMRADIO_HP			(0x01 << 1)
-#define FMRADIO_SPK			(0x01 << 2)
+#define FMRADIO_HP		(0x01 << 1)
+#define FMRADIO_SPK		(0x01 << 2)
 
-#define PLAYBACK_GAIN_NUM 58
-#define VOICECALL_GAIN_NUM 33
-#define RECORDING_GAIN_NUM 36
-#define FMRADIO_GAIN_NUM 24
-#define GAIN_CODE_NUM 13
-#define VOIPCALL_GAIN_NUM 38
+#define PLAYBACK_GAIN_NUM	58
+#define VOICECALL_GAIN_NUM	33
+#define RECORDING_GAIN_NUM	36
+#define FMRADIO_GAIN_NUM	24
+#define GAIN_CODE_NUM		13
+#define VOIPCALL_GAIN_NUM	38
 
 #if defined (CONFIG_MACH_BOSE_ATT)
 #define TTY_OFF      0
@@ -139,7 +139,7 @@ enum audio_path	{
 	LINEOUT, SPK_LINEOUT
 };
 #if defined(CONFIG_MACH_N1_CHN)
-enum mic_path		{MAIN, HP_MIC, SUB, BT_REC, VOICE_ALL,VOICE_RX, MIC_OFF};
+enum mic_path		{MAIN, HP_MIC, SUB, BT_REC, VOICE_ALL, VOICE_RX, MIC_OFF};
 #else
 enum mic_path		{MAIN, HP_MIC, SUB, BT_REC, MIC_OFF};
 #endif
@@ -236,10 +236,13 @@ struct gain_info_t {
 	unsigned short gain;
 };
 
-#if AUDIO_COMMON_DEBUG
+#if AUDIO_COMMON_DEBUG > 1
 #define DEBUG_LOG(format, ...)\
 	printk(KERN_INFO "[ "SUBJECT " (%s,%d) ] " format "\n", \
 			__func__, __LINE__, ## __VA_ARGS__);
+#elif AUDIO_COMMON_DEBUG
+#define DEBUG_LOG(format, ...)\
+	printk(KERN_INFO SUBJECT": "format"\n", ## __VA_ARGS__);
 #else
 #define DEBUG_LOG(format, ...)
 #endif

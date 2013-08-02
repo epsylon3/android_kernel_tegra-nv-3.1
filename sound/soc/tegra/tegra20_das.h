@@ -98,9 +98,10 @@ struct tegra20_das {
 
 #ifdef CONFIG_PM
 /* Restores the das registers from cache */
-extern int tegra20_das_suspend();
-extern int tegra20_das_resume();
+extern int tegra20_das_suspend(void);
+extern int tegra20_das_resume(void);
 #endif
+
 /*
  * Terminology:
  * DAS: Digital audio switch (HW module controlled by this driver)

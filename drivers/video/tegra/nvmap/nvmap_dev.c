@@ -1164,13 +1164,13 @@ void direct_allocations_stringify(struct nvmap_client *client)
 		struct nvmap_handle *handle = ref->handle;
 		if (handle->alloc && !handle->heap_pgalloc) {
 			printk("%-16s %-16s %8lx %10u\n", "", "",
-				handle->carveout->base,
+				(long unsigned int) handle->carveout->base,
 				handle->size);
 		}
 	}
 }
 
-void dump_allocations_nvmap()
+void dump_allocations_nvmap(void)
 {
 	if (nvmap_dev) {
 		int i;
@@ -1198,7 +1198,7 @@ void dump_allocations_nvmap()
 	}
 }
 
-void dump_client_nvmap()
+void dump_client_nvmap(void)
 {
 	if (nvmap_dev) {
 		int i;
@@ -1224,7 +1224,7 @@ void dump_client_nvmap()
 	}
 }
 
-void dump_nvmap()
+void dump_nvmap(void)
 {
 	printk("================== allocations ==================\n");
 	dump_allocations_nvmap();

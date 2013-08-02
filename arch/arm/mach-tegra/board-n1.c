@@ -129,6 +129,17 @@ int charging_mode_from_boot = 0;
 
 #define WLAN_SKB_BUF_NUM	17
 
+#define SZ_5M                           0x00500000
+#define SZ_6M                           0x00600000
+#define SZ_10M                          0x00A00000
+#define SZ_56M                          0x03800000
+#define SZ_60M                          0x03C00000
+#define SZ_80M                          0x05000000
+#define SZ_100M                         0x06400000
+#define SZ_136M                         0x08800000
+#define SZ_152M                         0x09800000
+#define SZ_300M                         0x12C00000
+
 static struct sk_buff *wlan_static_skb[WLAN_SKB_BUF_NUM];
 static struct mxt_callbacks *inform_charger_callbacks;
 
@@ -706,7 +717,7 @@ static struct platform_device sec_device_jack = {
 	.dev.platform_data	= &sec_jack_pdata,
 };
 
-
+#if 0
 static struct tegra_ulpi_config n1_ehci2_ulpi_phy_config = {
 	.reset_gpio = TEGRA_GPIO_PV1,
 	.clk = "clk_dev2",
@@ -717,6 +728,7 @@ static struct tegra_ehci_platform_data n1_ehci2_ulpi_platform_data = {
 	.power_down_on_bus_suspend = 0,
 	.phy_config = &n1_ehci2_ulpi_phy_config,
 };
+#endif
 
 static struct tegra_i2c_platform_data n1_i2c1_platform_data = {
 	.adapter_nr	= 0,
@@ -1057,7 +1069,7 @@ static struct gpio_keys_platform_data n1_keys_platform_data = {
 	.wakeup_key	= n1_wakeup_key,
 	.wakeup_key_twice	= n1_wakeup_key_twice,
 #ifdef CONFIG_SAMSUNG_LPM_MODE
-	.check_lpm = n1_check_lpm,
+	.check_lpm	= n1_check_lpm,
 #endif
 };
 
@@ -1083,7 +1095,6 @@ static struct platform_device tegra_camera = {
 	.name = "tegra_camera",
 	.id = -1,
 };
-
 
 
 #if defined (CONFIG_MACH_BOSE_ATT)
@@ -1169,9 +1180,9 @@ static struct sec_bat_platform_data sec_bat_pdata = {
 #ifdef CONFIG_MAX8922_CHARGER
 	.sub_charger_name	= "max8922-charger",
 #endif
-	.adc_arr_size		= NULL,
-	.adc_table			= NULL,
-	.adc_channel		= NULL,
+	.adc_arr_size		= 0,
+	.adc_table		= NULL,
+	.adc_channel		= 0,
 	.get_init_cable_state	= sec_bat_get_init_cable_state,
 	.get_temperature	= sec_bat_get_temperature,
 	.get_batt_level	        = sec_bat_get_level,
@@ -1275,10 +1286,12 @@ static struct platform_device *n1_devices[] __initdata = {
 };
 
 /*n1 touch : atmel_mxt224E*/
-static void n1_touch_init_hw(struct mxt_platform_data *pdata)
+static void n1_touch_init_hw(void *data)
 {
+	struct mxt_platform_data *pdata = (struct mxt_platform_data *) data;
 	int error;
-	pr_info("(%s,%d)\n", __func__, __LINE__);
+
+	pr_info("%s\n", __func__);
 
 	/* TSP INT GPIO initialize */
 	tegra_gpio_enable(pdata->irq_gpio);
@@ -1299,7 +1312,7 @@ static void n1_touch_init_hw(struct mxt_platform_data *pdata)
 			gpio_direction_output(pdata->key_led_en1, 0);
 		} else {
 			pr_err("tsp_menu_key_led GPIO(%d) request FAIL error = %d", pdata->key_led_en1, error);
-	}
+		}
 
 		error = gpio_request(pdata->key_led_en2, "tsp_key_led2");
 		if (error == 0) {
@@ -1320,7 +1333,7 @@ static void n1_touch_init_hw(struct mxt_platform_data *pdata)
 			gpio_direction_output(pdata->key_led_en1, 0);
 		} else {
 			pr_err("tsp_menu_key_led GPIO(%d) request FAIL error = %d", pdata->key_led_en1, error);
-	}
+		}
 
 		error = gpio_request(pdata->key_led_en2, "tsp_key_led2");
 		if (error == 0) {
@@ -1359,31 +1372,39 @@ static void n1_touch_init_hw(struct mxt_platform_data *pdata)
 	pdata->board_rev = system_rev;
 }
 
-static void n1_touch_exit_hw(struct mxt_platform_data *pdata)
+static void n1_touch_exit_hw(void *data)
 {
-	pr_info("(%s,%d)\n", __func__, __LINE__);
+	struct mxt_platform_data *pdata = (struct mxt_platform_data *) data;
+
+	pr_info("%s\n", __func__);
+
 	gpio_free(pdata->irq_gpio);
 	gpio_free(pdata->key_led_en1);
-	if (pdata->key_led_en2 != NULL)
-	gpio_free(pdata->key_led_en2);
-	if (pdata->key_led_en3 != NULL)
+
+	if (pdata->key_led_en2)
+		gpio_free(pdata->key_led_en2);
+	if (pdata->key_led_en3)
 		gpio_free(pdata->key_led_en3);
-	if (pdata->key_led_en4 != NULL)
+	if (pdata->key_led_en4)
 		gpio_free(pdata->key_led_en4);
 
 	tegra_gpio_disable(pdata->irq_gpio);
 	tegra_gpio_disable(pdata->key_led_en1);
-	if (pdata->key_led_en2 != NULL)
-	tegra_gpio_disable(pdata->key_led_en2);
-	if (pdata->key_led_en3 != NULL)
+
+	if (pdata->key_led_en2)
+		tegra_gpio_disable(pdata->key_led_en2);
+	if (pdata->key_led_en3)
 		tegra_gpio_disable(pdata->key_led_en3);
-	if (pdata->key_led_en4 != NULL)
+	if (pdata->key_led_en4)
 		tegra_gpio_disable(pdata->key_led_en4);
 }
 
-static void n1_touch_suspend_hw(struct mxt_platform_data *pdata)
+static void n1_touch_suspend_hw(void *data)
 {
-	pr_info("(%s,%d)\n", __func__, __LINE__);
+	struct mxt_platform_data *pdata = (struct mxt_platform_data *) data;
+
+	pr_info("%s\n", __func__);
+
 	/* first power off (off sequence: avdd -> vdd) */
 	regulator_disable(pdata->reg_avdd);
 	regulator_disable(pdata->reg_vdd_lvsio);
@@ -1392,12 +1413,16 @@ static void n1_touch_suspend_hw(struct mxt_platform_data *pdata)
 	/*and then, pin configuration */
 	gpio_direction_output(pdata->irq_gpio, 0);
 	tegra_pinmux_set_pullupdown(pdata->i2c_pingroup, pdata->i2c_suspend_pupd);
+
 	pr_info("[TSP] Power Off!!");
 }
 
-static void n1_touch_resume_hw(struct mxt_platform_data *pdata)
+static void n1_touch_resume_hw(void *data)
 {
+	struct mxt_platform_data *pdata = (struct mxt_platform_data *) data;
+
 	pr_info("(%s,%d)\n", __func__, __LINE__);
+
 	/* first pin configuration */
 	gpio_direction_input(pdata->irq_gpio);
 	tegra_pinmux_set_pullupdown(pdata->i2c_pingroup, pdata->i2c_resume_pupd);
@@ -1407,14 +1432,13 @@ static void n1_touch_resume_hw(struct mxt_platform_data *pdata)
 	regulator_enable(pdata->reg_vdd_lvsio);
 	regulator_enable(pdata->reg_avdd);
 	msleep(100);
-	pr_info("[TSP] Power On!!");
 
+	pr_info("[TSP] Power On!!");
 }
 
 void n1_inform_charger_connection(int mode)
 {
-	if (inform_charger_callbacks &&
-				inform_charger_callbacks->inform_charger)
+	if (inform_charger_callbacks &&	inform_charger_callbacks->inform_charger)
 		inform_charger_callbacks->inform_charger(inform_charger_callbacks, mode);
 };
 EXPORT_SYMBOL(n1_inform_charger_connection);
@@ -1435,10 +1459,10 @@ static struct mxt_platform_data n1_mxt224E_platform_data = {
 	.resume_platform_hw = n1_touch_resume_hw,
 	.register_cb = n1_register_touch_callbacks,
 
-	.key_led_en1 = NULL,
-	.key_led_en2 = NULL,
-	.key_led_en3 = NULL,
-	.key_led_en4 = NULL,
+	.key_led_en1 = 0,
+	.key_led_en2 = 0,
+	.key_led_en3 = 0,
+	.key_led_en4 = 0,
 
 	.reg_vdd_name = "TSP_VDD_1V8",
 	.reg_vdd = NULL,
@@ -1456,7 +1480,7 @@ static struct mxt_platform_data n1_mxt224E_platform_data = {
 	.i2c_resume_pupd = TEGRA_PUPD_PULL_UP,
 	.i2c_suspend_pupd = TEGRA_PUPD_PULL_DOWN,
 	.irq_gpio = GPIO_TSP_INT,
-	.board_rev = NULL,
+	.board_rev = 0,
 };
 
 static struct i2c_board_info atmel_i2c_touch_info[] = {
@@ -1530,10 +1554,12 @@ struct tegra_pingroup_config mclk = {
 	TEGRA_TRI_TRISTATE
 };
 
+#if 0
 static struct s5k4ecgx_reg_8 s5k4ecgx_active_discharge[] = {
 	{0x01, 0xFF},	// active discharge enable
 	{S5K4ECGX_TABLE_END_8, 0x0},
 };
+#endif
 
 static struct s5k4ecgx_reg_8 s5k4ecgx_VCM_ON[] = {
 	{0x08, 0x14},	// 2.8V for VCM - LDO4
@@ -1649,13 +1675,13 @@ static struct s5k4ecgx_reg_8 s5k4ecgx_power_off_1[] = {
 	{S5K4ECGX_TABLE_WAIT_MS_8, 0x02},
 	{0x00, 0x81},				// 1.8V - LDO5
 
-	{S5K4ECGX_TABLE_END, 0x0},
+	{S5K4ECGX_TABLE_END_8, 0x0},
 };
 
 static struct s5k4ecgx_reg_8 s5k4ecgx_power_off_2[] = {
 	{0x00, 0x01},				// CAM_CORE_1.2V - BUCK
 
-	{S5K4ECGX_TABLE_END, 0x0},
+	{S5K4ECGX_TABLE_END_8, 0x0},
 };
 
 static void n1_s5k4ecgx_power_off()
@@ -1794,7 +1820,7 @@ static struct s5k6aafx_reg_8 s5k6aafx_power_on_21[] = {
 static struct s5k6aafx_reg_8 s5k6aafx_power_off_21[] = {
 	{0x00, 0x39},				// CAM_CORE_1.2V - BUCK
 
-	{S5K6AAFX_TABLE_END, 0x0},
+	{S5K6AAFX_TABLE_END_8, 0x0},
 };
 
 static struct s5k6aafx_reg_8 s5k6aafx_power_on_22[] = {
@@ -1806,7 +1832,7 @@ static struct s5k6aafx_reg_8 s5k6aafx_power_on_22[] = {
 static struct s5k6aafx_reg_8 s5k6aafx_power_off_22[] = {
 	{0x00, 0x1B},				// CAM_CORE_1.2V - BUCK
 
-	{S5K6AAFX_TABLE_END, 0x0},
+	{S5K6AAFX_TABLE_END_8, 0x0},
 };
 
 static void n1_s5k6aafx_power_on(void)
@@ -2336,6 +2362,7 @@ static void __init tegra_n1_init(void)
 	char serial[20];
 #ifdef CONFIG_KERNEL_DEBUG_SEC
 	int ret = 0;
+	struct device *platform = n1_devices[0]->dev.parent;
 #endif
 	tegra_clk_init_from_table(n1_clk_init_table);
 	n1_pinmux_init();
@@ -2374,7 +2401,7 @@ static void __init tegra_n1_init(void)
 #endif
 	n1_usb_init();
 	n1_gps_init();
-    n1_panel_init();
+	n1_panel_init();
 	n1_power_off_init();
 	n1_emc_init();
 #ifdef CONFIG_BCM4330_RFKILL
@@ -2382,7 +2409,6 @@ static void __init tegra_n1_init(void)
 #endif
 	n1_sensors_init();
 	tegra_n1_codec_init();
-
 
 	n1_fsa9480_init();
 	camera_init();
@@ -2394,7 +2420,6 @@ static void __init tegra_n1_init(void)
 	console_suspend_enabled = 0;
 #ifdef CONFIG_KERNEL_DEBUG_SEC
 	/* Add debug level node */
-	struct device *platform = n1_devices[0]->dev.parent;
 	ret = device_create_file(platform, &dev_attr_sec_debug_level);
 	if (ret)
 		printk("Fail to create sec_debug_level file\n");
@@ -2416,10 +2441,11 @@ void __init tegra_n1_reserve(void)
 	if (memblock_reserve(0x0, 4096) < 0)
 		pr_warn("Cannot reserve first 4K of memory for safety\n");
 
-	if (system_rev < 2) /* 512 MB */
-		tegra_reserve(SZ_128M, SZ_8M, SZ_16M);
-	else	/* 1GB */
-		tegra_reserve(SZ_256M, SZ_8M, SZ_16M);
+#ifdef CONFIG_MHL_SII9234
+	tegra_reserve(SZ_152M, SZ_8M, SZ_10M);
+#else
+	tegra_reserve(SZ_152M, SZ_8M);
+#endif
 
 	/* Reserve memory for the ram console. */
 	ram_console_start = memblock_end_of_DRAM() - SZ_1M;
@@ -2439,9 +2465,8 @@ MACHINE_START(SAMSUNG_N1, "n1")
 	.boot_params    = 0x00000100,
 	.map_io         = tegra_map_common_io,
 	.reserve        = tegra_n1_reserve,
-	.init_early		= tegra_init_early,
+	.init_early	= tegra_init_early,
 	.init_irq       = tegra_init_irq,
 	.timer          = &tegra_timer,
 	.init_machine   = tegra_n1_init,
 MACHINE_END
-

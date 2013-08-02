@@ -63,7 +63,6 @@ static bool force_policy_max;
 static DEFINE_MUTEX(tegra_cpulock_lock);
 static bool is_cpufreq_locked;
 static int cpulock_freq;
-static int cpulock_debug_timeout;
 static struct hrtimer cpulock_timer;
 #endif /* CONFIG_TEGRA_CPU_FREQ_LOCK */
 
@@ -759,7 +758,7 @@ static int tegra_pm_notify(struct notifier_block *nb, unsigned long event,
 		tegra_auto_hotplug_governor(
 			freq_table[suspend_index].frequency, true);
 	} else if (event == PM_POST_SUSPEND) {
-		unsigned int freq;
+		/* unsigned int freq; */
 		is_suspended = false;
 		/* tegra_cpu_edp_init(true); */
 		/* tegra_cpu_set_speed_cap(&freq); */
@@ -796,6 +795,20 @@ static int tegra_cpu_init(struct cpufreq_policy *policy)
 
 	cpufreq_frequency_table_cpuinfo(policy, freq_table);
 	cpufreq_frequency_table_get_attr(freq_table, policy->cpu);
+
+#ifdef CONFIG_TEGRA_CPU_FREQ_SET_MIN_MAX
+	if (CONFIG_TEGRA_CPU_FREQ_MAX > CONFIG_TEGRA_CPU_FREQ_MIN) {
+
+		policy->min = max(CONFIG_TEGRA_CPU_FREQ_MIN,  216000);
+		policy->max = min(CONFIG_TEGRA_CPU_FREQ_MAX, 1320000);
+
+		if (cpufreq_frequency_table_cpuinfo(policy, freq_table)) {
+			policy->cpuinfo.min_freq = policy->min;
+			policy->cpuinfo.max_freq = policy->max;
+		}
+	}
+#endif
+
 	policy->cur = tegra_getspeed(policy->cpu);
 	target_cpu_speed[policy->cpu] = policy->cur;
 

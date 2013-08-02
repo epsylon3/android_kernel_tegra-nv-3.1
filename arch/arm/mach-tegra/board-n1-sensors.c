@@ -185,6 +185,7 @@ static struct i2c_board_info n1_i2c_compass_sensor_board_info[] = {
 		.platform_data = &akm8975_pdata,
 	},
 };
+
 int __init n1_sensors_init(void)
 {
 	n1_mpu3050_init();
@@ -202,4 +203,3 @@ int __init n1_sensors_init(void)
 
 	return 0;
 }
-

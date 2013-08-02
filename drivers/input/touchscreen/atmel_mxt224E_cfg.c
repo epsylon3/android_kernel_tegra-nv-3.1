@@ -94,7 +94,7 @@ static touch_keyarray_t15_config_t			keyarray_config = { 0 };              /* Ke
 /* Signal Processing Objects */
 
 static touch_proximity_t23_config_t			proximity_config = { 0 };    /* Proximity Config */
-static proci_onetouchgestureprocessor_t24_config_t     onetouch_gesture_config = {0};  /* One-touch gesture config. */
+static proci_onetouchgestureprocessor_t24_config_t	onetouch_gesture_config = {0};  /* One-touch gesture config. */
 
 /* Support Objects */
 static spt_gpiopwm_t19_config_t				gpiopwm_config = { 0 };             /* GPIO/PWM config */
@@ -110,7 +110,7 @@ static spt_cteconfig_t46_config_t			cte_t46_config = { 0 };
 static proci_stylus_t47_config_t			stylus_t47_config = { 0 };
 static procg_noisesuppression_t48_config_t		noisesuppression_t48_config = { 0 };
 
-static spt_userdata_t38_t				userdata_t38 = { 0 };
+static spt_userdata_t38_t				userdata_t38 = { { 0 } };
 
 /*   */
 /* PROCI_STYLUS_T47 */

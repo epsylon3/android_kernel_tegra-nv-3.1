@@ -25,16 +25,17 @@
 
 /* single global instance */
 sec_param_data *param_data = NULL;
-#if 1
+
 static bool misc_sec_operation(void *value, int offset, int size, int direction)
 {
-	printk("%s %x %x %d %d\n", __func__, value, offset, size, direction);
 	/* Read from MSC(misc) partition  */
-	struct file *filp;
+	struct file *filp = NULL;
 	mm_segment_t fs;
 	int ret = true;
 	int flag = (direction == MISC_WR) ? O_WRONLY : O_RDONLY;
 	int fd;
+
+	printk("%s %p %x %d %d\n", __func__, value, offset, size, direction);
 
 	fs = get_fs();
 	set_fs(KERNEL_DS);
@@ -74,7 +75,7 @@ misc_sec_debug_out:
 
 	return ret;
 }
-#endif
+
 bool sec_open_param(void)
 {
 	int ret = true;
@@ -94,7 +95,6 @@ bool sec_open_param(void)
 		return false;
 	}
 
-#if 1
 	printk("************* PARAM ***************\n");
 	printk("signature : 0x%x\n", param_data->signature);
 	printk("size : 0x%x\n", param_data->size);
@@ -106,7 +106,6 @@ bool sec_open_param(void)
 	printk("uartsel : 0x%x\n", param_data->uartsel);
 	printk("usbsel : 0x%x\n", param_data->usbsel);
 	printk("************* PARAM ***************\n");
-#endif
 
 	return ret;
 
@@ -162,7 +161,7 @@ bool sec_set_param(sec_param_index index, void *value)
 {
 	int ret = true;
 	int offset = SEC_MISC_FILE_OFFSET;
-	printk(KERN_NOTICE "(sec_set_param) The debug value is 0x%x !!\n", value);
+	printk(KERN_NOTICE "(sec_set_param) The debug value is 0x%p !!\n", value);
 	ret = sec_open_param();
 	if (!ret) {
 		printk(KERN_NOTICE "(sec_open_param) return error !!\n");

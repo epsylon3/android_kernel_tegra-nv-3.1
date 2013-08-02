@@ -503,15 +503,6 @@ config PCH_PHUB
 	  To compile this driver as a module, choose M here: the module will
 	  be called pch_phub.
 
-config USB_SWITCH_FSA9480
-	tristate "FSA9480 USB Switch"
-	depends on I2C
-	help
-	  The FSA9480 is a USB port accessory detector and switch.
-	  The FSA9480 is fully controlled using I2C and enables USB data,
-	  stereo and mono audio, video, microphone and UART data to use
-	  a common connector port.
-
 config WL127X_RFKILL
 	tristate "Bluetooth power control driver for TI wl127x"
 	depends on RFKILL
@@ -594,11 +585,18 @@ config VIBTONZ
       Say Y to enable Vibtonz support.
 
 config MAX1749_VIBRATOR
-	bool "MAX1749 vibrator device driver"
-	depends on ANDROID_TIMED_OUTPUT
-	default n
-	---help---
-	Adds a timed output vibrator device node for MAX1749 vibrator motor
+    bool "MAX1749 vibrator device driver"
+    depends on ANDROID_TIMED_OUTPUT
+    default n
+    help
+      Adds a timed output vibrator device node for MAX1749 vibrator motor
+
+config GENERIC_BLN
+    bool "Generic BLN support for backlight notification"
+    default y
+    help
+      Say Y here to enable the backlight notification
+      for Android led-notification (modified liblights needed)
 
 source "drivers/misc/c2port/Kconfig"
 source "drivers/misc/eeprom/Kconfig"

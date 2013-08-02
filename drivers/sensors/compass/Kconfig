@@ -17,3 +17,10 @@ config SENSORS_AK8975
 	  magnetometer sensor AK8975C.
 	  This option eanbles the magnetic sensors device driver for
 	  the magnetometer sensor AK8975C.
+
+config SENSORS_AKM8975
+	tristate "AKM8975"
+	default n
+	depends on I2C
+	help
+	  AKM8975

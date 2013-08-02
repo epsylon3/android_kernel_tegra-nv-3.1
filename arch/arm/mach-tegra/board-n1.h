@@ -30,18 +30,20 @@ void wm8994_set_sub_mic_bias(bool on);
 void wm8994_set_ear_sel(bool on);
 
 #ifdef CONFIG_BT_BCM4330
+#include <linux/serial_core.h>
+
 extern void bcm_bt_lpm_exit_lpm_locked(struct uart_port *uport);
 #endif
 
 /* Interrupt numbers from external peripherals */
-#define MAX8907C_INT_BASE       TEGRA_NR_IRQS
-#define MAX8907C_INT_END        (MAX8907C_INT_BASE + 32)
+#define MAX8907C_INT_BASE	TEGRA_NR_IRQS
+#define MAX8907C_INT_END	(MAX8907C_INT_BASE + 32)
 
-#define TDIODE_OFFSET	(9000)	/* in millicelsius */
+#define TDIODE_OFFSET		(9000)	/* in millicelsius */
 
 #ifdef CONFIG_USB_ANDROID_ACCESSORY
-#    define ANDROID_ACCESSORY_CONFIG_STRING		"ACCESSORY Only(ADK mode)"
-#    define ANDROID_ACCESSORY_ADB_CONFIG_STRING	"ACCESSORY _ADB (ADK + ADB mode)"
+#  define ANDROID_ACCESSORY_CONFIG_STRING	"ACCESSORY Only(ADK mode)"
+#  define ANDROID_ACCESSORY_ADB_CONFIG_STRING	"ACCESSORY _ADB (ADK + ADB mode)"
 #  define USBSTATUS_ACCESSORY			0x100
 #endif
 #endif

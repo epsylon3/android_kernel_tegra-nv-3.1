@@ -22,7 +22,7 @@
 /*
  * Debug Feature
  */
-#define SUBJECT "wm8994_bose.c"
+#define SUBJECT "wm8994_bose"
 
 /*
  * Definitions of tunning volumes for wm8994

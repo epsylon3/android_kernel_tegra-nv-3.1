@@ -262,7 +262,7 @@ static struct tegra_dc_out n1_disp2_out = {
 	.dcc_bus	= 13,
 	.hotplug_gpio	= n1_hdmi_hpd,
 
-	.max_pixclock = KHZ2PICOS(74250),
+	.max_pixclock	= KHZ2PICOS(74250),
 
 	.align		= TEGRA_DC_ALIGN_MSB,
 	.order		= TEGRA_DC_ORDER_RED_BLUE,
@@ -411,7 +411,6 @@ static void n1_panel_early_suspend(struct early_suspend *h)
 	SET_CONSERVATIVE_GOVERNOR_DOWN_THRESHOLD);
 	cpufreq_set_conservative_governor_param("freq_step", \
 	SET_CONSERVATIVE_GOVERNOR_FREQ_STEP);
-
 #endif
 }
 

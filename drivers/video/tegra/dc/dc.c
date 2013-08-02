@@ -40,7 +40,6 @@
 #include <linux/switch.h>
 #endif
 
-
 #include <mach/clk.h>
 #include <mach/dc.h>
 #include <mach/fb.h>
@@ -1504,7 +1503,7 @@ void tegra_dc_setup_clk(struct tegra_dc *dc, struct clk *clk)
 	int pclk;
 
 	if (dc->out->type == TEGRA_DC_OUT_RGB) {
-		unsigned long rate;
+		unsigned long rate = 0;
 		struct clk *parent_clk =
 			clk_get_sys(NULL, dc->out->parent_clk ? : "pll_p");
 
@@ -1880,10 +1879,10 @@ int tegra_dc_set_fb_mode(struct tegra_dc *dc,
 				"Display timing doesn't meet restrictions.\n");
 		return -EINVAL;
 	}
-	dev_info(&dc->ndev->dev, "Using mode %dx%d pclk=%d href=%d vref=%d\n",
+/*	dev_info(&dc->ndev->dev, "Using mode %dx%d pclk=%d href=%d vref=%d\n",
 		mode.h_active, mode.v_active, mode.pclk,
 		mode.h_ref_to_sync, mode.v_ref_to_sync
-	);
+	);*/
 
 #ifndef CONFIG_TEGRA_HDMI_74MHZ_LIMIT
 	/* Double the pixel clock and update v_active only for frame packed mode */

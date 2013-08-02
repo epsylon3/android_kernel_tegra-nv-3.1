@@ -487,9 +487,6 @@ static int s5k4ecgx_read_reg(struct i2c_client *client, u16 val, u8 *r_data, u16
 static int s5k4ecgx_check_vender(struct s5k4ecgx_info *info)
 {
 	int err;
-	struct i2c_msg msg[2];
-	unsigned char data[2];
-	u8 r_data[2] = {0, 0};
 
 	FUNC_ENTR;
 

@@ -32,6 +32,9 @@
 #include "gpio-names.h"
 #include <mach/gpio-n1.h>
 #include <linux/fsa9480.h>
+#ifdef CONFIG_PN544
+#include <linux/pn544.h>
+#endif
 
 #include <linux/switch.h>
 #include <linux/power_supply.h>
@@ -50,8 +53,8 @@
 #include <mach/tegra_das.h>
 #include <mach/otg_def.h>
 
-#define GPIO_AUDIO_I2C_SDA TEGRA_GPIO_PG3
-#define GPIO_AUDIO_I2C_SCL TEGRA_GPIO_PI0
+#define GPIO_AUDIO_I2C_SDA	TEGRA_GPIO_PG3
+#define GPIO_AUDIO_I2C_SCL	TEGRA_GPIO_PI0
 #define DEV_USB_OTG		(1 << 7)
 
 struct nct1008_temp_callbacks *callbacks;
@@ -391,6 +394,7 @@ static struct platform_device fuelgauge_gpio_i2c_device = {
 	.dev.platform_data		= &fuelgauge_gpio_i2c_pdata,
 };
 
+#if 0
 static int charger_online(void)
 {
 	struct power_supply *psp = power_supply_get_by_name("charger");
@@ -420,6 +424,7 @@ static int charger_enable(void)
 		return 0;
 	return val.intval == POWER_SUPPLY_STATUS_CHARGING;
 }
+#endif
 
 static int max8907c_check_vchg(void)
 {
@@ -646,6 +651,12 @@ static void fsa9480_dock_charger_cb(bool attached)
 }
 EXPORT_SYMBOL(fsa9480_dock_charger_cb);
 
+#if 0
+static struct switch_dev switch_mhl = {
+	.name = "mhl",
+};
+#endif
+
 bool dock_attached;
 void tegra_vbus_detect_notify_batt(void)
 {
@@ -665,6 +676,20 @@ static void fsa9480_deskdock_cb(bool attached)
 		dock_attached = 0;
 	}
 }
+
+#ifdef CONFIG_MHL_SII9234
+static void fsa9480_mhl_cb(bool attached)
+{
+	if (attached) {
+/*		switch_set_state(&switch_mhl, 1);*/
+		dock_attached = 1;
+	}
+	else {
+/*		switch_set_state(&switch_mhl, 0);*/
+		dock_attached = 0;
+	}
+}
+#endif
 
 static void fsa9480_cardock_cb(bool attached)
 {
@@ -686,6 +711,13 @@ static void fsa9480_reset_cb(void)
 	ret = switch_dev_register(&switch_dock);
 	if (ret < 0)
 		pr_err("Failed to register dock switch. %d\n", ret);
+
+#if 0
+	/* for MHL */
+	ret = switch_dev_register(&switch_mhl);
+	if (ret < 0)
+		pr_err("Failed to register mhl switch. %d\n", ret);
+#endif
 }
 
 static void fsa9480_set_otg_func(void (*otg_id_open)(struct fsa9480_usbsw *),
@@ -724,6 +756,9 @@ static struct fsa9480_platform_data fsa9480_pdata = {
 	.dock_charger_cb = fsa9480_dock_charger_cb,
 	.deskdock_cb = fsa9480_deskdock_cb,
 	.cardock_cb = fsa9480_cardock_cb,
+#ifdef CONFIG_MHL_SII9234
+	.mhldock_cb = fsa9480_mhl_cb,
+#endif
 	.reset_cb = fsa9480_reset_cb,
 	.set_otg_func = fsa9480_set_otg_func,
 	.inform_charger_connection = n1_inform_charger_connection,
@@ -743,6 +778,24 @@ static struct platform_device tegra_gpio_i2c11_device = {
 		.platform_data = &tegra_gpio_i2c11_pdata,
 	}
 };
+
+#ifdef CONFIG_PN544
+/*pn544*/
+static struct i2c_gpio_platform_data tegra_gpio_i2c12_pdata = {
+	.sda_pin = GPIO_NFC_I2C_SDA,
+	.scl_pin = GPIO_NFC_I2C_SCL,
+	.udelay = 1, /* 200 kHz */
+	.timeout = 0, /* jiffies */
+};
+
+static struct platform_device tegra_gpio_i2c12_device = {
+	.name = "i2c-gpio",
+	.id = 12,
+	.dev = {
+		.platform_data = &tegra_gpio_i2c12_pdata,
+	}
+};
+#endif
 
 #ifdef CONFIG_MHL_SII9234
 /* HDMI - DDC */
@@ -808,6 +861,14 @@ static struct platform_device tegra_gpio_i2c17_device = {
 	}
 };
 
+#ifdef CONFIG_PN544
+static struct pn544_i2c_platform_data pn544_pdata = {
+	.irq_gpio = GPIO_NFC_IRQ,
+	.ven_gpio = GPIO_NFC_EN,
+	.firm_gpio = GPIO_NFC_FIRMWARE,
+};
+#endif
+
 static const struct i2c_board_info sec_gpio_i2c6_info[] = {
 	{
 		I2C_BOARD_INFO("Si4709", 0x20 >> 1),
@@ -837,6 +898,16 @@ static struct i2c_board_info sec_gpio_i2c11_info[] = {
 	},
 };
 
+#ifdef CONFIG_PN544
+static struct i2c_board_info sec_gpio_i2c12_info[] = {
+	{
+		I2C_BOARD_INFO("pn544", 0x2b),
+		.platform_data = &pn544_pdata,
+	},
+};
+#endif
+
+#ifdef CONFIG_MHL_SII9234
 static struct i2c_board_info sec_gpio_i2c13_info[] = {
 };
 
@@ -854,18 +925,20 @@ static struct i2c_board_info sec_gpio_i2c14_info[] = {
 		I2C_BOARD_INFO("SII9234C", 0xC8>>1),
 	},
 };
+#endif
 
-static void nct1008_temp_register_callbacks(
-		struct nct1008_temp_callbacks *ptr)
+static void nct1008_temp_register_callbacks(struct nct1008_temp_callbacks *ptr)
 {
 	callbacks = ptr;
 }
+
 static void n1_nct1008_init(void)
 {
 	tegra_gpio_enable(GPIO_nTHRM_IRQ);
 	gpio_request(GPIO_nTHRM_IRQ, "temp_alert");
 	gpio_direction_input(GPIO_nTHRM_IRQ);
 }
+
 static struct nct1008_temp_data n1_temp = {
 	.register_callbacks = &nct1008_temp_register_callbacks,
 };
@@ -883,7 +956,6 @@ static struct nct1008_platform_data n1_nct1008_pdata = {
 	.alarm_fn = tegra_throttling_enable,
 	.temp = &n1_temp,
 };
-
 
 static struct i2c_board_info sec_gpio_i2c15_info[] = {
 	{
@@ -908,15 +980,22 @@ int __init n1_gpio_i2c_init(int lpm_mode)
 	i2c_register_board_info(11, sec_gpio_i2c11_info,
 			ARRAY_SIZE(sec_gpio_i2c11_info));
 
-
+#ifdef CONFIG_PN544
+	platform_device_register(&tegra_gpio_i2c12_device);
+	i2c_register_board_info(12, sec_gpio_i2c12_info,
+			ARRAY_SIZE(sec_gpio_i2c12_info));
+#endif
 
 	tegra_gpio_enable(tegra_gpio_i2c8_pdata.sda_pin);
 	tegra_gpio_enable(tegra_gpio_i2c8_pdata.scl_pin);
 
-
 	tegra_gpio_enable(tegra_gpio_i2c11_pdata.sda_pin);
 	tegra_gpio_enable(tegra_gpio_i2c11_pdata.scl_pin);
 
+#ifdef CONFIG_PN544
+	tegra_gpio_enable(tegra_gpio_i2c12_pdata.sda_pin);
+	tegra_gpio_enable(tegra_gpio_i2c12_pdata.scl_pin);
+#endif
 
 	/* nct1008 Thermal monitor */
 	n1_nct1008_init();
@@ -954,13 +1033,28 @@ int __init n1_gpio_i2c_init(int lpm_mode)
 		tegra_gpio_enable(gpio_i2c6_platdata.scl_pin);
 	}
 
+#ifdef CONFIG_MHL_SII9234
+	/* HDMI & MHL LOGIC */
+	platform_device_register(&tegra_gpio_i2c13_device);
+	i2c_register_board_info(13, sec_gpio_i2c13_info,
+			ARRAY_SIZE(sec_gpio_i2c13_info));
+	tegra_gpio_enable(tegra_gpio_i2c13_pdata.sda_pin);
+	tegra_gpio_enable(tegra_gpio_i2c13_pdata.scl_pin);
+
+	platform_device_register(&tegra_gpio_i2c14_device);
+	i2c_register_board_info(14, sec_gpio_i2c14_info,
+			ARRAY_SIZE(sec_gpio_i2c14_info));
+	tegra_gpio_enable(tegra_gpio_i2c14_pdata.sda_pin);
+	tegra_gpio_enable(tegra_gpio_i2c14_pdata.scl_pin);
+#endif
+
 	if (system_rev >= 4) {
 		platform_device_register(&tegra_gpio_i2c16_device);
 		tegra_gpio_enable(tegra_gpio_i2c16_pdata.sda_pin);
 		tegra_gpio_enable(tegra_gpio_i2c16_pdata.scl_pin);
 	}
 
-	if(system_rev >= 5) {
+	if (system_rev >= 5) {
 		platform_device_register(&tegra_gpio_i2c17_device);
 		tegra_gpio_enable(tegra_gpio_i2c17_pdata.sda_pin);
 		tegra_gpio_enable(tegra_gpio_i2c17_pdata.scl_pin);

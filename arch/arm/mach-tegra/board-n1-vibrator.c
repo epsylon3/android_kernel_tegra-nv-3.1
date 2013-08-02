@@ -40,7 +40,7 @@
 #include <mach/pinmux.h>
 #include "clock.h"
 
-#define MAX_TIMEOUT		10000 /* 10s */
+#define MAX_TIMEOUT	10000	/* 10s */
 
 static struct vibrator {
 	struct wake_lock wklock;
@@ -111,11 +111,11 @@ static void n1_vibrator_off(void)
 	if (!vibdata.running)
 		return;
 
-	vibdata.running = false;
 	isa1200_suspend();
 	clk_disable(vibdata.dap_mclk2);
 	tegra_pinmux_set_tristate(TEGRA_PINGROUP_CDEV2, TEGRA_TRI_TRISTATE);
 	gpio_set_value(GPIO_VIBTONE_EN, 0);
+	vibdata.running = false;
 	wake_unlock(&vibdata.wklock);
 }
 
@@ -167,8 +167,8 @@ static void n1_vibrator_enable(struct timed_output_dev *dev, int value)
 				HRTIMER_MODE_REL);
 		}
 	}
-//	else
-//		n1_vibrator_off();
+	else
+		n1_vibrator_off();
 
 	mutex_unlock(&vibdata.lock);
 }
@@ -309,8 +309,8 @@ int imm_vibrator_chip_disable(void)
 EXPORT_SYMBOL(imm_vibrator_chip_disable);
 
 static const struct i2c_device_id vibrator_device_id[] = {
-	{"isa1200", 0},
-	{}
+	{ "isa1200", 0 },
+	{ }
 };
 MODULE_DEVICE_TABLE(i2c, vibrator_device_id);
 
@@ -329,7 +329,7 @@ static int __init n1_init_vibrator(void)
 	int ret;
 
 	if (system_rev < 0x5){
-		pr_notice("%s : Vibrator  not support HW Rev =[%d] !!!\n",__func__,system_rev);
+		pr_notice("%s : Vibrator  not support HW Rev = [%d] !!!\n", __func__, system_rev);
 		return 0;
 	}
 

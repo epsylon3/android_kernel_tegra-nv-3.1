@@ -1933,7 +1933,7 @@ static long usbdev_do_ioctl(struct file *file, unsigned int cmd,
 	return ret;
 }
 
-static int usbdev_log(unsigned int cmd, int ret)
+static void usbdev_log(unsigned int cmd, int ret)
 {
 	char *cmd_string;
 	switch (cmd) {

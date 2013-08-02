@@ -19,6 +19,13 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
+
+/*
+ * Earlysuspend is disabled by default, but included in the code.
+ * Create a define to easily enable or disable it.
+ */
+//#define USE_EARLYSUSPEND 1
+
 #include <linux/platform_device.h>
 #include <linux/module.h>
 #include <linux/device.h>
@@ -36,16 +43,18 @@
 #include <linux/workqueue.h>
 
 #include <linux/regulator/consumer.h>
+#if defined (CONFIG_HAS_EARLYSUSPEND) && defined (USE_EARLYSUSPEND)
 #include <linux/earlysuspend.h>
-
+#endif
 
 #include "cmc623.h"
 
+#if 0
 static struct regulator *cmc623_regulator_csi;
+#endif
 
 #define USE_IMACONV_CMC623 1 // Set "0" for CMC bypass
 #define n1_ld9040 0
-
 
 #define CABC_ONOFF_TEST 1
 #define BYPASS_ONOFF_TEST 1
@@ -72,7 +81,7 @@ void bypass_onoff_ctrl(int);
 #define GPIO_LEVEL_LOW      	0
 #define GPIO_LEVEL_HIGH     	1
 
-#ifdef CONFIG_HAS_EARLYSUSPEND
+#if defined (CONFIG_HAS_EARLYSUSPEND) && defined (USE_EARLYSUSPEND)
 static struct early_suspend	cmc623_early_suspend;
 #endif
 
@@ -81,18 +90,18 @@ static struct early_suspend	cmc623_early_suspend;
 #define CMC623_I2C_SPEED_KHZ  400
 #define CMC623_DEVICE_ADcDR  0x38
 
-#if defined(CMC623_SERVICE_EXTEND)
+/* Each client has this additional data */
+struct cmc623_data {
+        struct i2c_client *client;
+};
+
+#ifdef CMC623_SERVICE_EXTEND
 extern void tune_cmc623_pwm_brightness(int value);
 extern void cmc623_cabc_enable(int enable);
 extern int cmc623_service_suspend(void);
 extern int cmc623_service_resume(void);
 extern void init_cmc623_service(struct cmc623_data *pdata);
 #endif
-
-/* Each client has this additional data */
-struct cmc623_data {
-	struct i2c_client *client;
-};
 
 /*
   TODO: These must be made platform agnostic.
@@ -109,10 +118,10 @@ struct cmc623_data {
 #define TEGRA_GPIO_PX0		184
 #define TEGRA_GPIO_PR3		139
 
-#define GPIO_IMA_PWREN TEGRA_GPIO_PQ4
-#define GPIO_IMA_N_RST TEGRA_GPIO_PJ6
-#define GPIO_IMA_BYPASS TEGRA_GPIO_PBB5
-#define GPIO_IMA_SLEEP TEGRA_GPIO_PW0
+#define GPIO_IMA_PWREN	TEGRA_GPIO_PQ4
+#define GPIO_IMA_N_RST	TEGRA_GPIO_PJ6
+#define GPIO_IMA_BYPASS	TEGRA_GPIO_PBB5
+#define GPIO_IMA_SLEEP	TEGRA_GPIO_PW0
 
 
 #define GPIO_IMA_LDOEN1 TEGRA_GPIO_PL5
@@ -178,38 +187,46 @@ enum mDNIe_mode_CABC_type{
 };
 
 /*mDNIe Set Status Checking Value.*/
+#ifndef CMC623_SERVICE_EXTEND
 static enum Lcd_CMC623_UI_mode current_cmc623_UI = CMC623_UI_MODE;
 static int current_cmc623_OutDoor_OnOff = FALSE;
 static int current_cmc623_CABC_OnOff = FALSE;
 
 static int setting_first = FALSE;
 static int cmc623_bypass_mode = FALSE;
+
 static int current_autobrightness_enable = FALSE;
-static int cmc623_current_region_enable = FALSE;
+#endif
+//static int cmc623_current_region_enable = FALSE;
 
 enum mDNIe_mode_CABC_type cmc623_cabc_mode[] = {
 	mode_type_CABC_none,		/*UI*/
 	mode_type_CABC_on,		/*Video*/
 	mode_type_CABC_on,		/*Video warm*/
 	mode_type_CABC_on,		/*Video cold*/
-	mode_type_CABC_off, 	/*Camera*/
+	mode_type_CABC_off, 		/*Camera*/
 	mode_type_CABC_none,		/*Navi*/
 };
 
 #define NUM_ITEM_POWER_LUT	9
-#define NUM_POWER_LUT	2
+#define NUM_POWER_LUT		2
 
+#ifndef CMC623_SERVICE_EXTEND
 static int current_power_lut_num = FALSE;
 
 unsigned char cmc623_Power_LUT[NUM_POWER_LUT][NUM_ITEM_POWER_LUT]={
 	{ 0x48, 0x4d, 0x44, 0x52, 0x48, 0x45, 0x40, 0x3d, 0x45 },
 	{ 0x3e, 0x43, 0x3a, 0x48, 0x3e, 0x3b, 0x36, 0x33, 0x3b },
 };
+#endif
 
 static bool cmc623_I2cWrite16(unsigned char Addr, unsigned long Data);
+
+#if 0
 static void cmc623_cabc_pwm_brightness_reg(int value);
 static void cmc623_manual_pwm_brightness_reg(int value);
 static void cmc623_manual_pwm_brightness_reg_nosync(int value);
+#endif
 
 unsigned long last_cmc623_Bank = 0xffff;
 unsigned long last_cmc623_Algorithm = 0xffff;
@@ -218,6 +235,7 @@ unsigned long last_cmc623_Algorithm = 0xffff;
 *
  * functions for I2C transactions
  */
+#if 0
 static int cmc623_I2cWrite(struct i2c_client *client, u8 reg,
 				u8 *data, u8 length)
 {
@@ -240,7 +258,7 @@ static int cmc623_I2cWrite(struct i2c_client *client, u8 reg,
 
 	return 0;
 }
-
+#endif
 
 bool cmc623_I2cWrite16(unsigned char Addr, unsigned long Data)
 {
@@ -248,7 +266,7 @@ bool cmc623_I2cWrite16(unsigned char Addr, unsigned long Data)
 	struct i2c_msg msg[1];
 	unsigned char data[3];
 
-	pr_debug("========cmc623_I2cWrite16=======(a:%x,d:%x)\n", Addr, Data);
+	pr_debug("========cmc623_I2cWrite16=======(a:%x,d:%lx)\n", Addr, Data);
 
 	if (!p_cmc623_data) {
 		pr_err("p_cmc623_data is NULL\n");
@@ -268,7 +286,7 @@ bool cmc623_I2cWrite16(unsigned char Addr, unsigned long Data)
 
 	if (TRUE == cmc623_state.suspended) {
 		pr_info("cmc623 don't need writing while"
-			" LCD off(a:%x,d:%x)\n", Addr, Data);
+			" LCD off(a:%x,d:%lx)\n", Addr, Data);
 		return 0;
 	}
 
@@ -338,9 +356,7 @@ char cmc623_I2cRead(u8 reg, u8 *val, unsigned int len )
 	pr_err("%s %d i2c transfer error\n", __func__, __LINE__);
 
 	return err;
-
 }
-
 
 int cmc623_I2cRead16(u8 reg, u16 *val)
 {
@@ -392,7 +408,6 @@ int cmc623_I2cRead16(u8 reg, u16 *val)
 }
 
 
-
 /*#define CMC623_INITSEQ cmc623_init1*/
 #if n1_ld9040
 #define CMC623_INITSEQ cmc623_init_amoled
@@ -400,25 +415,21 @@ int cmc623_I2cRead16(u8 reg, u16 *val)
 #define CMC623_INITSEQ cmc623_init2
 #endif
 
-
-
 static bool CMC623_SetUp(void)
 {
-    int i=0;
-    int num = ARRAY_SIZE(CMC623_INITSEQ);
+	int i=0;
+	int num = ARRAY_SIZE(CMC623_INITSEQ);
 	/*pr_err("%s num is %d\n", __func__, num);*/
 
-    for (i=0; i<num; i++) {
-		if (!cmc623_I2cWrite16(CMC623_INITSEQ[i].RegAddr,
-		CMC623_INITSEQ[i].Data)) {
+	for (i=0; i<num; i++) {
+		if (!cmc623_I2cWrite16(CMC623_INITSEQ[i].RegAddr, CMC623_INITSEQ[i].Data)) {
 			pr_err("why return false??!!!\n");
-            return FALSE;
-        }
-        if (CMC623_INITSEQ[i].RegAddr == CMC623_REG_SWRESET &&
-            CMC623_INITSEQ[i].Data == 0xffff)
+			return FALSE;
+		}
+		if (CMC623_INITSEQ[i].RegAddr == CMC623_REG_SWRESET && CMC623_INITSEQ[i].Data == 0xffff)
 			usleep_range(3000, 5000);
-    }
-    return TRUE;
+	}
+	return TRUE;
 }
 
 void cmc623_reg_unmask(void)
@@ -447,7 +458,7 @@ void ove_workqueue_func(void* data)
 	}
 }
 
-#if !defined(CMC623_SERVICE_EXTEND)
+#ifndef CMC623_SERVICE_EXTEND
 
 #define CMC623_TUNESEQ cmc623_cabcon3
 #define CMC623_TUNESEQ2 cmc623_cabcoff3
@@ -476,12 +487,6 @@ void cabc_onoff_ctrl(int value)
 	}
 
 }
-#else // CMC623_SERVICE_EXTEND
-void cabc_onoff_ctrl(int value)
-{
-	cmc623_cabc_enable(value);
-}
-#endif // CMC623_SERVICE_EXTEND
 
 static void CMC623_Set_Mode(void)
 {
@@ -502,7 +507,20 @@ static void CMC623_Set_Mode(void)
 #endif
 }
 
+#else // CMC623_SERVICE_EXTEND
+void cabc_onoff_ctrl(int value)
+{
+	cmc623_cabc_enable(value);
+}
+#endif // CMC623_SERVICE_EXTEND
 
+int Islcdonoff(void)
+{
+	return lcdonoff;
+}
+EXPORT_SYMBOL(Islcdonoff);
+
+#ifndef CMC623_SERVICE_EXTEND
 /* value: 0 ~ 1600*/
 static void cmc623_cabc_pwm_brightness_reg(int value)
 {
@@ -538,16 +556,9 @@ static void cmc623_cabc_pwm_brightness_reg(int value)
 	cmc623_I2cWrite16(0xB4, reg);
 }
 
-int Islcdonoff(void)
-{
-	return lcdonoff;
-}
-EXPORT_SYMBOL(Islcdonoff);
-
 /*value: 0 ~ 100*/
 static void cmc623_cabc_pwm_brightness(int value)
 {
-	int reg;
 	unsigned char * p_plut;
 
 	if (!p_cmc623_data) {
@@ -563,6 +574,7 @@ static void cmc623_cabc_pwm_brightness(int value)
 
 	cmc623_I2cWrite16(0x28,0x0000);
 }
+#endif
 
 /*value: 0 ~ 100*/
 static void cmc623_manual_pwm_brightness(int value)
@@ -582,7 +594,7 @@ static void cmc623_manual_pwm_brightness(int value)
 
 }
 
-#if !defined(CMC623_SERVICE_EXTEND)
+#ifndef CMC623_SERVICE_EXTEND
 /* value: 0 ~ 1600*/
 void cmc623_pwm_brightness(int value)
 {
@@ -622,12 +634,12 @@ void cmc623_pwm_brightness(int value)
 	{
 		cmc623_manual_pwm_brightness(data);
 	}
-#else //BYPASS_ONOFF_TEST
+#else
 	if(cmc623_state.cabc_enabled == TRUE)
 		cmc623_cabc_pwm_brightness(data);
 	else
 		cmc623_manual_pwm_brightness(data);
-#endif //BYPASS_ONOFF_TEST
+#endif /* BYPASS_ONOFF_TEST */
 }
 #else // CMC623_SERVICE_EXTEND
 void cmc623_pwm_brightness(int value)
@@ -667,8 +679,8 @@ void cmc623_pwm_brightness_bypass(int value)
 
 void cmc623_pwm_apply(int level)
 {
-	int i = 0;
-/*
+/*	int i = 0;
+
 	for(i=0; i<100; i++) {
 		if(Islcdonoff())
 			break;
@@ -686,13 +698,7 @@ void cmc623_pwm_apply(int level)
 }
 EXPORT_SYMBOL(cmc623_pwm_apply);
 
-static int cmc623_hw_rst()
-{
-
-	return 0;
-}
-
-int panel_gpio_init()
+int panel_gpio_init(void)
 {
 	int ret;
 	pr_info("%s called\n", __func__);
@@ -701,30 +707,33 @@ int panel_gpio_init()
 
 	ret = gpio_request(GPIO_IMA_LDOEN1, "GPIO_IMA_LDOEN1");
 	if (ret) {
-		pr_err(KERN_ERR "failed to request CMC623 GPIO%d\n",
-				GPIO_IMA_LDOEN2);
+		pr_err("failed to request CMC623 GPIO%d\n",
+			GPIO_IMA_LDOEN2);
 		return ret;
 	}
 
-       ret = gpio_request(GPIO_LCD_LDO_LED_EN, "GPIO_LCD_LDO_LED_EN");
+	ret = gpio_request(GPIO_LCD_LDO_LED_EN, "GPIO_LCD_LDO_LED_EN");
 	if (ret) {
-		pr_err(KERN_ERR "failed to request CMC623 GPIO%d\n",
-				GPIO_LCD_LDO_LED_EN);
+		pr_err("failed to request CMC623 GPIO%d\n",
+			GPIO_LCD_LDO_LED_EN);
 		return ret;
 	}
 
-       ret = gpio_direction_output(GPIO_IMA_LDOEN1, 1);
+	ret = gpio_direction_output(GPIO_IMA_LDOEN1, 1);
 	if (ret < 0)
 		goto cleanup;
-	regulator_enable(reg_cmc623io_1v8);
 
+	regulator_enable(reg_cmc623io_1v8);
 	return 0;
+
 cleanup:
 	gpio_free(GPIO_IMA_LDOEN1);
 	gpio_free(GPIO_LCD_LDO_LED_EN);
+
+	return ret;
 }
 
-int cmc623_gpio_init()
+int cmc623_gpio_init(void)
 {
 	int ret;
 	pr_info("%s called\n", __func__);
@@ -766,7 +775,7 @@ int cmc623_gpio_init()
 	if (ret < 0)
 		goto cleanup;
 
-       ret = gpio_direction_output(GPIO_IMA_BYPASS, 1);
+	ret = gpio_direction_output(GPIO_IMA_BYPASS, 1);
 	if (ret < 0)
 		goto cleanup;
 
@@ -778,13 +787,14 @@ int cmc623_gpio_init()
 	ret = gpio_direction_output(GPIO_IMA_N_RST, 0);
 	if (ret < 0)
 		goto cleanup;
-       msleep(5);
+
+	msleep(5);
 
 	ret = gpio_direction_output(GPIO_IMA_N_RST, 1);
 	if (ret < 0)
 		goto cleanup;
 
-       msleep(16);
+	msleep(16);
 #endif
 	return 0;
 
@@ -796,8 +806,7 @@ cleanup:
 	return ret;
 }
 
-#ifdef CONFIG_HAS_EARLYSUSPEND
-int cmc623_suspend(struct early_suspend *h)
+int cmc623_suspend(struct i2c_client *h)
 {
 	if (cmc623_suspend_flag == 1) {
 		printk(KERN_INFO "%s is already called\n", __func__);
@@ -816,7 +825,7 @@ int cmc623_suspend(struct early_suspend *h)
 		return 0;
 	}
 
-#if defined(CMC623_SERVICE_EXTEND)
+#ifdef CMC623_SERVICE_EXTEND
 	cmc623_service_suspend();
 #endif
 	/* 1.2V/1.8V/3.3V may be on
@@ -852,8 +861,7 @@ int cmc623_suspend(struct early_suspend *h)
 }
 EXPORT_SYMBOL(cmc623_suspend);
 
-
-int cmc623_pre_resume()
+int cmc623_pre_resume(void)
 {
 #if 0
 	/* CMC 623 PIN Default setting */
@@ -886,7 +894,7 @@ int cmc623_pre_resume()
 EXPORT_SYMBOL(cmc623_pre_resume);
 
 /*CAUTION : pre_resume function must be called before using this function*/
-int cmc623_resume(struct early_suspend *h)
+int cmc623_resume(struct i2c_client *h)
 {
 	if (cmc623_suspend_flag == 0) {
 		printk(KERN_INFO "cmc623_suspend is not called\n");
@@ -933,7 +941,7 @@ int cmc623_resume(struct early_suspend *h)
 	}
 
 	CMC623_SetUp();
-#if !defined(CMC623_SERVICE_EXTEND) //yd.seo check this point
+#ifndef CMC623_SERVICE_EXTEND //yd.seo check this point
 	CMC623_Set_Mode();
 #if BYPASS_ONOFF_TEST
 	if(current_bypass_onoff)
@@ -948,7 +956,7 @@ int cmc623_resume(struct early_suspend *h)
 #endif //BYPASS_ONOFF_TEST
 #else  // CMC623_SERVICE_EXTEND
 	cmc623_service_resume();
-#endif  //CMC623_SERVICE_EXTEND
+#endif //CMC623_SERVICE_EXTEND
 #else //USE_IMACONV_CMC623
 	// wait 16ms or above
 	msleep(16);
@@ -956,9 +964,7 @@ int cmc623_resume(struct early_suspend *h)
 #endif //USE_IMACONV_CMC623
 
 	//gpio_set_value(GPIO_LCD_LDO_LED_EN, GPIO_LEVEL_HIGH); //yd.seo check
-
 	lcdonoff = TRUE;
-
 
 #if 0
 	/* restore mode & cabc status*/
@@ -975,9 +981,8 @@ int cmc623_resume(struct early_suspend *h)
 	return 0;
 }
 EXPORT_SYMBOL(cmc623_resume);
-#endif
 
-int cmc623_shutdown(struct i2c_client *client)
+void cmc623_shutdown(struct i2c_client *client)
 {
 	pr_info("-0- %s called -0-\n", __func__);
 
@@ -986,7 +991,7 @@ int cmc623_shutdown(struct i2c_client *client)
 
 	if (!p_cmc623_data) {
 		pr_err("%s cmc623 is not initialized\n", __func__);
-		return 0;
+		return;
 	}
 
 	/* 1.2V/1.8V/3.3V may be on
@@ -1007,9 +1012,6 @@ int cmc623_shutdown(struct i2c_client *client)
 	gpio_set_value(GPIO_IMA_PWREN, 0);
 
 	usleep_range(1000, 2000);
-
-
-	return 0;
 }
 
 #ifdef CABC_ONOFF_TEST
@@ -1090,7 +1092,8 @@ static DEVICE_ATTR(cabconoff, 0666, cabc_onoff_file_cmd_show,
 #endif
 
 #if BYPASS_ONOFF_TEST
-static void cmc623_reinit()
+#if 0
+static void cmc623_reinit(void)
 {
 	// FAILSAFEB <= HIGH
 	gpio_set_value(GPIO_IMA_PWREN, GPIO_LEVEL_HIGH);
@@ -1123,14 +1126,14 @@ static void cmc623_reinit()
 	if(!p_cmc623_data)
 	{
 		printk(KERN_ERR "%s cmc623 is not initialized\n", __func__);
-		return 0;
+		return;
 	}
 
 	CMC623_SetUp();
 
 	lcdonoff = TRUE;
-
 }
+#endif
 
 void bypass_onoff_ctrl(int value)
 {
@@ -1211,11 +1214,25 @@ static DEVICE_ATTR(bypassonoff, 0666, bypass_onoff_file_cmd_show, bypass_onoff_f
 
 #endif // BYPASS_ONOFF_TEST
 
+#if defined (CONFIG_HAS_EARLYSUSPEND) && defined (USE_EARLYSUSPEND)
+static void early_suspend(struct early_suspend *h)
+{
+        struct i2c_client *client = NULL;
+        cmc623_suspend(client);
+}
+
+static void late_resume(struct early_suspend *h)
+{
+	struct i2c_client *client = NULL;
+	cmc623_resume(client);
+}
+#endif
+
 static int cmc623_i2c_probe(struct i2c_client *client,
 			const struct i2c_device_id *id)
 {
 	struct cmc623_data *data;
-	int ret;
+//	int ret;
 
 	pr_info("==============================\n");
 	pr_info("cmc623 attach START!!!\n");
@@ -1225,7 +1242,7 @@ static int cmc623_i2c_probe(struct i2c_client *client,
 	if (!data) {
 		dev_err(&client->dev, "Failed to allocate memory\n");
 		return -ENOMEM;
-    }
+	}
 
 	data->client = client;
 	i2c_set_clientdata(client, data);
@@ -1242,7 +1259,7 @@ static int cmc623_i2c_probe(struct i2c_client *client,
 	if(!p_cmc623_data){
 		pr_err("%s cmc623 is not initialized\n", __func__);
 		return 0;
-		}
+	}
 
 
 	cmc623_state.suspended = FALSE;
@@ -1251,7 +1268,7 @@ static int cmc623_i2c_probe(struct i2c_client *client,
 	ret = CMC623_SetUp();
 	pr_err("%s CMC623_SetUp is %d\n", __func__, ret);
 	CMC623_Set_Mode();
-        //pr_err("%s CMC623_Set_Mode is %d\n", __func__, ret);
+	//pr_err("%s CMC623_Set_Mode is %d\n", __func__, ret);
 
 	// BL_EN HIGH
 	//gpio_set_value(GPIO_BL_RESET, GPIO_LEVEL_HIGH); //yd.seo tmp
@@ -1287,14 +1304,13 @@ static int cmc623_i2c_probe(struct i2c_client *client,
 	/*cmc623_i2c_client = c;*/
 #endif
 
-#if 0
-#ifdef CONFIG_HAS_EARLYSUSPEND
-	cmc623_early_suspend.level =  EARLY_SUSPEND_LEVEL_DISABLE_FB-2;
-	cmc623_early_suspend.suspend = cmc623_suspend;
-	cmc623_early_suspend.resume = cmc623_resume;
+#if defined (CONFIG_HAS_EARLYSUSPEND) && defined (USE_EARLYSUSPEND)
+	cmc623_early_suspend.level = (int) EARLY_SUSPEND_LEVEL_DISABLE_FB-2;
+	cmc623_early_suspend.suspend = early_suspend;
+	cmc623_early_suspend.resume = late_resume;
 	register_early_suspend(&cmc623_early_suspend);
-#endif	/* CONFIG_HAS_EARLYSUSPEND */
-#endif
+#endif	/* (CONFIG_HAS_EARLYSUSPEND) && (USE_EARLYSUSPEND) */
+
 	return 0;
 }
 
@@ -1308,9 +1324,9 @@ static int __devexit cmc623_i2c_remove(struct i2c_client *client)
 
 	kfree(data);
 
-#ifdef CONFIG_HAS_EARLYSUSPEND
+#if defined (CONFIG_HAS_EARLYSUSPEND) && defined (USE_EARLYSUSPEND)
 	unregister_early_suspend(&cmc623_early_suspend);
-#endif	/* CONFIG_HAS_EARLYSUSPEND */
+#endif	/* (CONFIG_HAS_EARLYSUSPEND) && (USE_EARLYSUSPEND) */
 
 	dev_info(&client->dev, "cmc623 i2c remove success!!!\n");
 
@@ -1324,17 +1340,18 @@ MODULE_DEVICE_TABLE(i2c, cmc623);
 
 struct i2c_driver cmc623_i2c_driver = {
 	.driver	= {
-	.name	= "image_convertor",
-        .owner = THIS_MODULE,
+		.name	= "image_convertor",
+        	.owner = THIS_MODULE,
 	},
 	.probe 		= cmc623_i2c_probe,
 	.remove 	= __devexit_p(cmc623_i2c_remove),
 	.id_table	= cmc623,
-#if !(defined CONFIG_HAS_EARLYSUSPEND)
-    .suspend = cmc623_suspend,
-	.resume  = cmc623_resume,
+//#if defined (CONFIG_HAS_EARLYSUSPEND) && defined (USE_EARLYSUSPEND)
+#ifndef CONFIG_HAS_EARLYSUSPEND
+	.suspend	= cmc623_suspend,
+	.resume		= cmc623_resume,
 #endif
-	.shutdown = cmc623_shutdown,
+	.shutdown	= cmc623_shutdown,
 };
 
 extern struct class *sec_class;
@@ -1392,7 +1409,7 @@ static int __devinit cmc623_probe(struct platform_device *pdev)
 	ove_wq = create_singlethread_workqueue("ove_wq");
 	INIT_WORK(&work_ove, ove_workqueue_func);
 */
-#if !defined(CMC623_SERVICE_EXTEND)
+#ifndef CMC623_SERVICE_EXTEND
 	cabc_onoff_ctrl(TRUE); //yd.seo check this point
 #else
 	init_cmc623_service(p_cmc623_data);

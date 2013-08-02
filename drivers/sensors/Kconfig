@@ -6,6 +6,13 @@ menuconfig SENSORS
 
 if SENSORS
 
+config SENSORS_KXTF9	
+	tristate "KXTF9"
+	default n
+	depends on I2C
+	help
+	  KXTF9 raw module, if the MPU hal is not used.
+
 source "drivers/sensors/proxlight/Kconfig"
 source "drivers/sensors/compass/Kconfig"
 source "drivers/sensors/mpu3050_v333/Kconfig"

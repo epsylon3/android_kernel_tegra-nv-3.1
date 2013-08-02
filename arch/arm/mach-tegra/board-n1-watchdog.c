@@ -57,8 +57,8 @@
  *
  * we'll pet the watchdog every 10 seconds
  */
-#define WDT_TIMEOUT 30  /* in seconds */
-#define WDT_PET_INTERVAL (10 * HZ) /* in jiffies */
+#define WDT_TIMEOUT		30		/* in seconds */
+#define WDT_PET_INTERVAL	(10 * HZ)	/* in jiffies */
 
 struct watchdog_data {
 	void __iomem		*wdt_source;

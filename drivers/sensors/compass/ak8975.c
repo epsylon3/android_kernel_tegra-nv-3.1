@@ -16,7 +16,9 @@
  * GNU General Public License for more details.
  *
  */
+
 #define FACTORY_TEST
+
 #include <linux/i2c.h>
 #include <linux/interrupt.h>
 #include <linux/irq.h>
@@ -46,6 +48,8 @@
 #define AK8975_REG_ASAX			0x10
 #define AK8975_REG_ASAY			0x11
 #define AK8975_REG_ASAZ			0x12
+
+#define TAG "ak8975"
 
 struct akm8975_data {
 	struct i2c_client *this_client;
@@ -228,6 +232,7 @@ static long akmd_ioctl(struct file *file, unsigned int cmd,
 	if (ret)
 		return ret;
 
+
 	switch (cmd) {
 	case ECS_IOCTL_WRITE:
 		if ((rwbuf.raw[0] < 2) || (rwbuf.raw[0] > (RWBUF_SIZE - 1)))
@@ -277,6 +282,7 @@ static long akmd_ioctl(struct file *file, unsigned int cmd,
 		}
 		break;
 	default:
+		pr_warning(TAG ": bad ioctl cmd %u %lu\n", cmd, arg);
 		return -ENOTTY;
 	}
 
@@ -500,7 +506,7 @@ static ssize_t ak8975_adc(struct device *dev,
 	err = akm8975_wait_for_data_ready(ak_data);
 	if (err) {
 		pr_err("%s: wait for data ready failed\n", __func__);
-		return;
+		return -EBUSY;
 	}
 	msleep(20);
 	/* get the value and report it */
@@ -510,7 +516,7 @@ static ssize_t ak8975_adc(struct device *dev,
 
 	if (err != sizeof(buf)) {
 		pr_err("%s: read data over i2c failed\n", __func__);
-		return;
+		return -EIO;
 	}
 
 	/* buf[0] is status1, buf[7] is status2 */
@@ -629,12 +635,14 @@ int akm8975_probe(struct i2c_client *client,
 	}
 
 #ifdef FACTORY_TEST
+#ifdef CONFIG_SENSORS_CORE
 	err = sensors_register(magnetic_sensor_device, akm,
 			magnetic_sensor_attrs, "magnetic_sensor");
 	if (err) {
 		printk(KERN_ERR "%s: cound not register magnetic sensor device(%d).\n",
 				__func__, err);
 	}
+#endif
 
 	sec_ak8975_dev = device_create(sec_class, NULL, 0, akm,
 			"sec_ak8975");

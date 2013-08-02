@@ -146,6 +146,7 @@ static u8 max8952_read(struct max8952 *max8952, u8 reg)
 	return val;
 }
 
+#if 0
 static int max8952_write(struct max8952 *max8952, u8 reg, u8 val)
 {
 	int ret;
@@ -162,6 +163,7 @@ static int max8952_write(struct max8952 *max8952, u8 reg, u8 val)
 		pr_err("Failed to write max8952 I2C driver: %d\n", ret);
 	return ret;
 }
+#endif
 
 int max8952_set_bits(struct max8952 *max8952, u8 reg, u8 mask, u8 val)
 {
@@ -255,7 +257,7 @@ static int __devinit max8952_probe(struct i2c_client *i2c,
 {
 	struct max8952 *max8952;
 	struct max8952_platform_data *pdata = i2c->dev.platform_data;
-	struct regulator_dev *rdev;
+	struct regulator_dev *rdev = NULL;
 	int id;
 	int i;
 

@@ -28,6 +28,7 @@
 #include <linux/memblock.h>
 #include <linux/bitops.h>
 #include <linux/sched.h>
+#include <linux/cpufreq.h>
 
 #include <asm/hardware/cache-l2x0.h>
 #include <asm/system.h>
@@ -49,44 +50,46 @@
 
 #define MC_SECURITY_CFG2	0x7c
 
-#define AHB_ARBITRATION_PRIORITY_CTRL		0x4
-#define   AHB_PRIORITY_WEIGHT(x)	(((x) & 0x7) << 29)
-#define   PRIORITY_SELECT_USB	BIT(6)
-#define   PRIORITY_SELECT_USB2	BIT(18)
-#define   PRIORITY_SELECT_USB3	BIT(17)
+#define AHB_ARBITRATION_PRIORITY_CTRL	0x4
+#define AHB_PRIORITY_WEIGHT(x)	(((x) & 0x7) << 29)
+#define PRIORITY_SELECT_USB	BIT(6)
+#define PRIORITY_SELECT_USB2	BIT(18)
+#define PRIORITY_SELECT_USB3	BIT(17)
 
-#define AHB_GIZMO_AHB_MEM		0xc
-#define   ENB_FAST_REARBITRATE	BIT(2)
-#define   DONT_SPLIT_AHB_WR     BIT(7)
+#define AHB_GIZMO_AHB_MEM	0xc
+#define ENB_FAST_REARBITRATE	BIT(2)
+#define DONT_SPLIT_AHB_WR	BIT(7)
 
-#define   RECOVERY_MODE	BIT(31)
-#define   BOOTLOADER_MODE	BIT(30)
-#define   FORCED_RECOVERY_MODE	BIT(1)
+#define RECOVERY_MODE		BIT(31)
+#define BOOTLOADER_MODE		BIT(30)
+#define FORCED_RECOVERY_MODE	BIT(1)
 
 #define AHB_GIZMO_USB		0x1c
 #define AHB_GIZMO_USB2		0x78
 #define AHB_GIZMO_USB3		0x7c
-#define   IMMEDIATE	BIT(18)
+#define IMMEDIATE		BIT(18)
 
 #define AHB_MEM_PREFETCH_CFG3	0xe0
 #define AHB_MEM_PREFETCH_CFG4	0xe4
 #define AHB_MEM_PREFETCH_CFG1	0xec
 #define AHB_MEM_PREFETCH_CFG2	0xf0
-#define   PREFETCH_ENB	BIT(31)
-#define   MST_ID(x)	(((x) & 0x1f) << 26)
-#define   AHBDMA_MST_ID	MST_ID(5)
-#define   USB_MST_ID	MST_ID(6)
-#define   USB2_MST_ID	MST_ID(18)
-#define   USB3_MST_ID	MST_ID(17)
-#define   ADDR_BNDRY(x)	(((x) & 0xf) << 21)
-#define   INACTIVITY_TIMEOUT(x)	(((x) & 0xffff) << 0)
+#define PREFETCH_ENB		BIT(31)
+#define MST_ID(x)		(((x) & 0x1f) << 26)
+#define AHBDMA_MST_ID		MST_ID(5)
+#define USB_MST_ID		MST_ID(6)
+#define USB2_MST_ID		MST_ID(18)
+#define USB3_MST_ID		MST_ID(17)
+#define ADDR_BNDRY(x)		(((x) & 0xf) << 21)
+#define INACTIVITY_TIMEOUT(x)	(((x) & 0xffff) << 0)
 
 unsigned long tegra_bootloader_fb_start;
 unsigned long tegra_bootloader_fb_size;
 unsigned long tegra_fb_start;
 unsigned long tegra_fb_size;
+#ifdef CONFIG_MHL_SII9234
 unsigned long tegra_fb2_start;
 unsigned long tegra_fb2_size;
+#endif
 unsigned long tegra_carveout_start;
 unsigned long tegra_carveout_size;
 unsigned long tegra_vpr_start;
@@ -140,6 +143,7 @@ void tegra_assert_system_reset(char mode, const char *cmd)
 	writel_relaxed(reg, reset);
 #endif
 }
+
 static int modem_id;
 static int commchip_id;
 static int sku_override;
@@ -817,8 +821,12 @@ out:
 	iounmap(to_io);
 }
 
+#ifdef CONFIG_MHL_SII9234
 void __init tegra_reserve(unsigned long carveout_size, unsigned long fb_size,
 	unsigned long fb2_size)
+#else
+void __init tegra_reserve(unsigned long carveout_size, unsigned long fb_size)
+#endif
 {
 	if (carveout_size) {
 		tegra_carveout_start = memblock_end_of_DRAM() - carveout_size;
@@ -832,6 +840,7 @@ void __init tegra_reserve(unsigned long carveout_size, unsigned long fb_size,
 			tegra_carveout_size = carveout_size;
 	}
 
+#ifdef CONFIG_MHL_SII9234
 	if (fb2_size) {
 		tegra_fb2_start = memblock_end_of_DRAM() - fb2_size;
 		if (memblock_remove(tegra_fb2_start, fb2_size)) {
@@ -843,6 +852,7 @@ void __init tegra_reserve(unsigned long carveout_size, unsigned long fb_size,
 		} else
 			tegra_fb2_size = fb2_size;
 	}
+#endif
 
 	if (fb_size) {
 		tegra_fb_start = memblock_end_of_DRAM() - fb_size;
@@ -859,8 +869,10 @@ void __init tegra_reserve(unsigned long carveout_size, unsigned long fb_size,
 	if (tegra_fb_size)
 		tegra_grhost_aperture = tegra_fb_start;
 
+#ifdef CONFIG_MHL_SII9234
 	if (tegra_fb2_size && tegra_fb2_start < tegra_grhost_aperture)
 		tegra_grhost_aperture = tegra_fb2_start;
+#endif
 
 	if (tegra_carveout_size && tegra_carveout_start < tegra_grhost_aperture)
 		tegra_grhost_aperture = tegra_carveout_start;
@@ -897,7 +909,9 @@ void __init tegra_reserve(unsigned long carveout_size, unsigned long fb_size,
 		"LP0:                    %08lx - %08lx\n"
 		"Bootloader framebuffer: %08lx - %08lx\n"
 		"Framebuffer:            %08lx - %08lx\n"
+#ifdef CONFIG_MHL_SII9234
 		"2nd Framebuffer:        %08lx - %08lx\n"
+#endif
 		"Carveout:               %08lx - %08lx\n"
 		"Vpr:                    %08lx - %08lx\n",
 		tegra_lp0_vec_start,
@@ -909,9 +923,11 @@ void __init tegra_reserve(unsigned long carveout_size, unsigned long fb_size,
 		tegra_fb_start,
 		tegra_fb_size ?
 			tegra_fb_start + tegra_fb_size - 1 : 0,
+#ifdef CONFIG_MHL_SII9234
 		tegra_fb2_start,
 		tegra_fb2_size ?
 			tegra_fb2_start + tegra_fb2_size - 1 : 0,
+#endif
 		tegra_carveout_start,
 		tegra_carveout_size ?
 			tegra_carveout_start + tegra_carveout_size - 1 : 0,
@@ -975,6 +991,60 @@ void __init tegra_release_bootloader_fb(void)
 }
 
 #ifdef CONFIG_TEGRA_CONVSERVATIVE_GOV_ON_EARLYSUPSEND
+// N1
+char cpufreq_default_gov[CONFIG_NR_CPUS][MAX_GOV_NAME_LEN];
+char *cpufreq_conservative_gov = "conservative";
+
+void cpufreq_store_default_gov(void)
+{
+	unsigned int cpu;
+	struct cpufreq_policy *policy;
+
+	for (cpu = 0; cpu < CONFIG_NR_CPUS; cpu++) {
+		policy = cpufreq_cpu_get(cpu);
+		if (policy) {
+			sprintf(cpufreq_default_gov[cpu], "%s",
+					policy->governor->name);
+			cpufreq_cpu_put(policy);
+		}
+	}
+}
+
+int cpufreq_change_gov(char *target_gov)
+{
+	int ret = 0;
+	unsigned int cpu = 0;
+
+#ifndef CONFIG_TEGRA_AUTO_HOTPLUG
+	for_each_online_cpu(cpu)
+#endif
+	ret = cpufreq_set_gov(target_gov, cpu);
+	return ret;
+}
+
+int cpufreq_restore_default_gov(void)
+{
+	int ret = 0;
+	unsigned int cpu;
+
+	for (cpu = 0; cpu < CONFIG_NR_CPUS; cpu++) {
+		if (strlen((const char *)&cpufreq_default_gov[cpu])) {
+			ret = cpufreq_set_gov(cpufreq_default_gov[cpu], cpu);
+			if (ret < 0)
+				/* Unable to restore gov for the cpu as
+				 * It was online on suspend and becomes
+				 * offline on resume.
+				 */
+				pr_info("Unable to restore gov:%s for cpu:%d,"
+						, cpufreq_default_gov[cpu]
+							, cpu);
+		}
+		cpufreq_default_gov[cpu][0] = '\0';
+	}
+	return ret;
+}
+
+// Bose
 static char cpufreq_gov_default[32];
 static char *cpufreq_gov_conservative = "conservative";
 static char *cpufreq_sysfs_place_holder="/sys/devices/system/cpu/cpu%i/cpufreq/scaling_governor";
@@ -984,7 +1054,7 @@ static void cpufreq_set_governor(char *governor)
 {
 	struct file *scaling_gov = NULL;
 	mm_segment_t old_fs;
-	char    buf[128];
+	char buf[128];
 	int i = 0;
 	loff_t offset = 0;
 
@@ -1004,9 +1074,9 @@ static void cpufreq_set_governor(char *governor)
 			if (scaling_gov->f_op != NULL &&
 				scaling_gov->f_op->write != NULL)
 				scaling_gov->f_op->write(scaling_gov,
-						governor,
-						strlen(governor),
-						&offset);
+					governor,
+					strlen(governor),
+					&offset);
 			else
 				pr_err("f_op might be null\n");
 
@@ -1022,7 +1092,7 @@ void cpufreq_save_default_governor(void)
 {
 	struct file *scaling_gov = NULL;
 	mm_segment_t old_fs;
-	char    buf[128];
+	char buf[128];
 	loff_t offset = 0;
 
 	/* change to KERNEL_DS address limit */
@@ -1036,9 +1106,9 @@ void cpufreq_save_default_governor(void)
 		if (scaling_gov->f_op != NULL &&
 			scaling_gov->f_op->read != NULL)
 			scaling_gov->f_op->read(scaling_gov,
-					cpufreq_gov_default,
-					32,
-					&offset);
+				cpufreq_gov_default,
+				32,
+				&offset);
 		else
 			pr_err("f_op might be null\n");
 
@@ -1072,9 +1142,9 @@ void cpufreq_set_conservative_governor_param(char *name, int value)
 		if (gov_param->f_op != NULL &&
 			gov_param->f_op->write != NULL)
 			gov_param->f_op->write(gov_param,
-					param_value,
-					strlen(param_value),
-					&offset);
+				param_value,
+				strlen(param_value),
+				&offset);
 		else
 			pr_err("f_op might be null\n");
 

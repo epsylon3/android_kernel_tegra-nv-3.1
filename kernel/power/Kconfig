@@ -85,6 +85,11 @@ choice
 		  to the screen and notifies user-space when it should resume.
 endchoice
 
+config FB_EARLYSUSPEND_DELAY
+	int "Framebuffer early-suspend delay"
+	depends on FB_EARLYSUSPEND
+	default 0
+
 config HIBERNATE_CALLBACKS
 	bool
 

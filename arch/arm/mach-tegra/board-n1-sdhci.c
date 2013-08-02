@@ -36,10 +36,10 @@
 
 #ifdef CONFIG_BROADCOM_WIFI_RESERVED_MEM
 
-#define WLAN_STATIC_SCAN_BUF0			5
-#define WLAN_STATIC_SCAN_BUF1			6
-#define PREALLOC_WLAN_SEC_NUM			4
-#define PREALLOC_WLAN_BUF_NUM			160
+#define WLAN_STATIC_SCAN_BUF0		5
+#define WLAN_STATIC_SCAN_BUF1		6
+#define PREALLOC_WLAN_SEC_NUM		4
+#define PREALLOC_WLAN_BUF_NUM		160
 #define PREALLOC_WLAN_SECTION_HEADER	24
 
 #define WLAN_SECTION_SIZE_0	(PREALLOC_WLAN_BUF_NUM * 128)
@@ -47,7 +47,7 @@
 #define WLAN_SECTION_SIZE_2	(PREALLOC_WLAN_BUF_NUM * 512)
 #define WLAN_SECTION_SIZE_3	(PREALLOC_WLAN_BUF_NUM * 1024)
 
-#define DHD_SKB_HDRSIZE			336
+#define DHD_SKB_HDRSIZE		336
 #define DHD_SKB_1PAGE_BUFSIZE	((PAGE_SIZE*1)-DHD_SKB_HDRSIZE)
 #define DHD_SKB_2PAGE_BUFSIZE	((PAGE_SIZE*2)-DHD_SKB_HDRSIZE)
 #define DHD_SKB_4PAGE_BUFSIZE	((PAGE_SIZE*4)-DHD_SKB_HDRSIZE)
@@ -124,14 +124,14 @@ static int brcm_init_wlan_mem(void)
 	printk(KERN_INFO"%s: WIFI MEM Allocated\n", __func__);
 	return 0;
 
- err_mem_alloc:
+err_mem_alloc:
 	pr_err("Failed to mem_alloc for WLAN\n");
 	for (j = 0 ; j < i ; j++)
 		kfree(wlan_mem_array[j].mem_ptr);
 
 	i = WLAN_SKB_BUF_NUM;
 
- err_skb_alloc:
+err_skb_alloc:
 	pr_err("Failed to skb_alloc for WLAN\n");
 	for (j = 0 ; j < i ; j++)
 		dev_kfree_skb(wlan_static_skb[j]);
@@ -139,6 +139,7 @@ static int brcm_init_wlan_mem(void)
 	return -ENOMEM;
 }
 #endif /* CONFIG_BROADCOM_WIFI_RESERVED_MEM */
+
 struct platform_device *tegra_sdhci_device0_ptr;
 
 static void (*wifi_status_cb)(int card_present, void *dev_id);

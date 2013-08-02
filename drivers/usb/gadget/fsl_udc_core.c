@@ -2297,7 +2297,6 @@ static void fsl_udc_boost_cpu_frequency_work(struct work_struct* work)
 static void fsl_udc_irq_work(struct work_struct* irq_work)
 {
 	struct fsl_udc *udc = container_of (irq_work, struct fsl_udc, irq_work);
-	bool cable_connected = false;
 	u32 temp = 0;
 
 	temp = fsl_readl(&usb_sys_regs->vbus_wakeup);

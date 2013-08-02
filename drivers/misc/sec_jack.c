@@ -12,6 +12,7 @@
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *  GNU General Public License for more details.
  */
+
 #include <linux/module.h>
 #include <linux/interrupt.h>
 #include <linux/workqueue.h>
@@ -34,7 +35,6 @@
 #ifdef CONFIG_MACH_BOSE_ATT
 #include <linux/mfd/stmpe.h>
 #endif
-
 
 #define MAX_ZONE_LIMIT		10
 #define SEND_KEY_CHECK_TIME_MS	30		/* 30ms */
@@ -78,9 +78,11 @@ struct sec_jack_info {
 	struct workqueue_struct *queue_det;  /* HACK DET queue from SEND_END intr */
 #endif
 };
+
 #ifdef CONFIG_MACH_BOSE_ATT
 struct sec_jack_info *g_jack_info;
 #endif
+
 /* with some modifications like moving all the gpio structs inside
  * the platform data and getting the name for the switch and
  * gpio_event from the platform data, the driver could support more than
@@ -213,7 +215,9 @@ extern void wm8994_jack_changed(void);
 
 static void sec_jack_set_type(struct sec_jack_info *hi, int jack_type)
 {
+#ifdef CONFIG_MACH_BOSE_ATT
 	struct sec_jack_platform_data *pdata = hi->pdata;
+#endif
 
 	/* this can happen during slow inserts where we think we identified
 	 * the type but then we get another interrupt and do it again
@@ -540,7 +544,6 @@ static ssize_t reselect_jack_store(struct device *dev,
 	struct device_attribute *attr, const char *buf, size_t size)
 {
 	struct sec_jack_info *hi = dev_get_drvdata(dev);
-	struct sec_jack_platform_data *pdata = hi->pdata;
 	int value = 0;
 
 	sscanf(buf, "%d", &value);
@@ -726,8 +729,10 @@ static int sec_jack_probe(struct platform_device *pdev)
 #endif
 	return 0;
 
+#ifndef CONFIG_MACH_BOSE_ATT
 err_enable_irq_wake:
 	free_irq(hi->det_irq, hi);
+#endif
 err_request_detect_irq:
 	input_unregister_handler(&hi->handler);
 err_register_input_handler:
@@ -749,10 +754,9 @@ err_kzalloc:
 
 static int sec_jack_remove(struct platform_device *pdev)
 {
-
 	struct sec_jack_info *hi = dev_get_drvdata(&pdev->dev);
 
-	pr_info("%s :\n", __func__);
+	pr_info("%s\n", __func__);
 #ifdef CONFIG_MACH_BOSE_ATT
 	g_jack_info = NULL;
 	if(system_rev < 0x09)
@@ -780,10 +784,9 @@ static int sec_jack_remove(struct platform_device *pdev)
 #ifndef CONFIG_MACH_BOSE_ATT
 static int sec_jack_suspend(struct platform_device *pdev)
 {
-	struct sec_jack_info *hi = dev_get_drvdata(&pdev->dev);
-
 	return 0;
 }
+
 extern unsigned int tegra_get_jack_current_suspend_mode(void);
 static int sec_jack_resume(struct platform_device *pdev)
 {

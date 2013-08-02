@@ -75,7 +75,6 @@
 #define COMMCHIP BROADCOM_BCM4330	3
 #define COMMCHIP_MARVELL_SD8797		4
 
-
 struct memory_accessor;
 
 void tegra_assert_system_reset(char mode, const char *cmd);
@@ -86,8 +85,12 @@ void __init tegra_mc_init(void);
 void __init tegra_map_common_io(void);
 void __init tegra_init_irq(void);
 void __init tegra_init_clock(void);
+#ifdef CONFIG_MHL_SII9234
 void __init tegra_reserve(unsigned long carveout_size, unsigned long fb_size,
 	unsigned long fb2_size);
+#else
+void __init tegra_reserve(unsigned long carveout_size, unsigned long fb_size);
+#endif
 /* FIXME: The following needs to move common.h when arm_soc_desc is
 	  introduced in a future version of the kernel */
 #ifdef CONFIG_CACHE_L2X0
@@ -110,8 +113,10 @@ extern unsigned long tegra_bootloader_fb_start;
 extern unsigned long tegra_bootloader_fb_size;
 extern unsigned long tegra_fb_start;
 extern unsigned long tegra_fb_size;
+#ifdef CONFIG_MHL_SII9234
 extern unsigned long tegra_fb2_start;
 extern unsigned long tegra_fb2_size;
+#endif
 extern unsigned long tegra_carveout_start;
 extern unsigned long tegra_carveout_size;
 extern unsigned long tegra_vpr_start;
@@ -124,6 +129,8 @@ extern unsigned long tegra_grhost_aperture;
 extern struct sys_timer tegra_timer;
 
 #ifndef CONFIG_MACH_BOSE_ATT
+#include <linux/earlysuspend.h>
+
 extern int n1_panel_pre_enable(void);
 extern int n1_panel_disable(void);
 extern int cmc623_suspend(struct early_suspend *h);
@@ -164,19 +171,30 @@ void tegra_get_board_info(struct board_info *);
 void tegra_get_pmu_board_info(struct board_info *bi);
 void tegra_get_display_board_info(struct board_info *bi);
 void tegra_get_camera_board_info(struct board_info *bi);
-#ifdef CONFIG_TEGRA_CONVSERVATIVE_GOV_ON_EARLYSUPSEND
-#define SET_CONSERVATIVE_GOVERNOR_UP_THRESHOLD 		95
-#define SET_CONSERVATIVE_GOVERNOR_DOWN_THRESHOLD 	50
-#define SET_CONSERVATIVE_GOVERNOR_FREQ_STEP 		3
 
-#ifdef CONFIG_MACH_N1
+#ifdef CONFIG_TEGRA_CONVSERVATIVE_GOV_ON_EARLYSUPSEND
+// N1
+#define MAX_GOV_NAME_LEN 16
+extern char cpufreq_default_gov[][MAX_GOV_NAME_LEN];
+extern char *cpufreq_conservative_gov;
+
+void cpufreq_store_default_gov(void);
+int cpufreq_restore_default_gov(void);
+int cpufreq_change_gov(char *target_gov);
+
 void n1_save_wakeup_key(int lp_state);
-#endif
+
+// Bose
+#define SET_CONSERVATIVE_GOVERNOR_UP_THRESHOLD 95
+#define SET_CONSERVATIVE_GOVERNOR_DOWN_THRESHOLD 50
+#define SET_CONSERVATIVE_GOVERNOR_FREQ_STEP 3
+
 void cpufreq_save_default_governor(void);
 void cpufreq_restore_default_governor(void);
 void cpufreq_set_conservative_governor(void);
 void cpufreq_set_conservative_governor_param(char *name, int value);
-#endif
+#endif /* CONFIG_TEGRA_CONVSERVATIVE_GOV_ON_EARLYSUPSEND */
+
 int get_core_edp(void);
 enum panel_type get_panel_type(void);
 int tegra_get_modem_id(void);

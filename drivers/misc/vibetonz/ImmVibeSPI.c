@@ -343,8 +343,9 @@ IMMVIBESPIAPI VibeStatus ImmVibeSPI_ForceOut_AmpEnable(VibeUInt8 nActuatorIndex)
 	    {
 	        ret = SYS_API__I2C__Write(ISA1200_I2C_ADDRESS,  2 /* data length*/,  I2C_data);
 	        cnt++;
-	    }while(VIBE_S_SUCCESS != ret && cnt < RETRY_CNT);
-	    if( VIBE_S_SUCCESS != ret) DEBUG_MSG("[ImmVibeSPI_ForceOut_AmpEnable] I2C_Write Error,  Slave Address = [%d], ret = [%d]\n", I2C_data[0], ret);
+	    } while(VIBE_S_SUCCESS != ret && cnt < RETRY_CNT);
+	    if( VIBE_S_SUCCESS != ret)
+	        DEBUG_MSG("[ImmVibeSPI_ForceOut_AmpEnable] I2C_Write Error,  Slave Address = [%d], ret = [%d]\n", I2C_data[0], ret);
 
     }
 
@@ -356,9 +357,11 @@ IMMVIBESPIAPI VibeStatus ImmVibeSPI_ForceOut_AmpEnable(VibeUInt8 nActuatorIndex)
 */
 IMMVIBESPIAPI VibeStatus ImmVibeSPI_ForceOut_Initialize(void)
 {
+#if 0
     int cnt = 0;
     unsigned char I2C_data[2];
     int ret = VIBE_S_SUCCESS;
+#endif
 
     DbgOut((KERN_DEBUG "ImmVibeSPI_ForceOut_Initialize.\n"));
 
@@ -592,10 +595,12 @@ IMMVIBESPIAPI VibeStatus ImmVibeSPI_ForceOut_SetSamples(VibeUInt8 nActuatorIndex
 /*
 ** Called to set force output frequency parameters
 */
+#if 0
 IMMVIBESPIAPI VibeStatus ImmVibeSPI_ForceOut_SetFrequency(VibeUInt8 nActuatorIndex, VibeUInt16 nFrequencyParameterID, VibeUInt32 nFrequencyParameterValue)
 {
     return VIBE_S_SUCCESS;
 }
+#endif
 
 /*
 ** Called to get the device name (device name must be returned as ANSI char)

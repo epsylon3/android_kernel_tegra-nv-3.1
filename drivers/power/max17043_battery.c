@@ -193,6 +193,8 @@ static int max17043_set_property(struct power_supply *psy,
 	default:
 		return -EINVAL;
 	}
+
+	return 0;
 }
 
 void max17043_reset_soc(void)
@@ -216,7 +218,7 @@ static void max17043_get_soc(struct i2c_client *client)
 {
 	struct max17043_chip *chip = i2c_get_clientdata(client);
 	u16 data;
-	int pure_soc, adj_soc, soc;
+	int pure_soc, adj_soc;
 
 	data = max17043_read_reg(client, MAX17043_SOC);
 	pure_soc = ((data * 100)>> 8);
@@ -501,15 +503,11 @@ static int __devexit max17043_remove(struct i2c_client *client)
 static int max17043_suspend(struct i2c_client *client,
 		pm_message_t state)
 {
-	struct max17043_chip *chip = i2c_get_clientdata(client);
-
 	return 0;
 }
 
 static int max17043_resume(struct i2c_client *client)
 {
-	struct max17043_chip *chip = i2c_get_clientdata(client);
-
 	return 0;
 }
 

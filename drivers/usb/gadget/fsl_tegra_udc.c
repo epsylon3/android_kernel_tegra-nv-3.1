@@ -110,7 +110,7 @@ void fsl_udc_lock_sclk(uint rate)
 	clk_enable(sclk_clk);
 }
 
-void fsl_udc_unlock_sclk()
+void fsl_udc_unlock_sclk(void)
 {
 	printk(KERN_DEBUG "sclk rate unlock 80Mhz\n");
 	clk_disable(sclk_clk);

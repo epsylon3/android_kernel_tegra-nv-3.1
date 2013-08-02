@@ -16,7 +16,6 @@
  * 02111-1307, USA
  */
 
-
 #include <linux/kernel.h>
 #include <linux/platform_device.h>
 #include <linux/input.h>
@@ -32,7 +31,6 @@
 
 #include <asm/mach-types.h>
 #include <asm/mach/arch.h>
-
 
 #define N1_ROW_COUNT	16
 #define N1_COL_COUNT	7

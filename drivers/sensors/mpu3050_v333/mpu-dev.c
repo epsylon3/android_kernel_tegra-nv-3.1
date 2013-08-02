@@ -1135,8 +1135,8 @@ static struct miscdevice i2c_mpu_device = {
 };
 
 #define FACTORY_TEST
-#ifdef FACTORY_TEST
 
+#ifdef FACTORY_TEST
 static ssize_t mpu3050_power_on(struct device *dev,
 				struct device_attribute *attr, char *buf)
 {
@@ -1301,7 +1301,7 @@ static ssize_t accel_calibration_show(struct device *dev,
 static ssize_t accel_calibration_store(struct device *dev,
 				struct device_attribute *attr,
 				const char *buf,
-				size_t *count)
+				size_t count)
 {
 	int err;
 #if 0
@@ -1332,7 +1332,6 @@ static struct device_attribute *accel_sensor_attrs[] = {
 
 static struct device *sec_mpu3050_dev;
 static struct device *accel_sensor_device;
-
 #endif
 
 int mpu3050_probe(struct i2c_client *client, const struct i2c_device_id *devid)
@@ -1344,7 +1343,6 @@ int mpu3050_probe(struct i2c_client *client, const struct i2c_device_id *devid)
 	struct i2c_adapter *accel_adapter = NULL;
 	struct i2c_adapter *compass_adapter = NULL;
 	struct i2c_adapter *pressure_adapter = NULL;
-	struct class *sensors_class;
 
 	dev_dbg(&client->adapter->dev, "%s\n", __func__);
 
@@ -1519,27 +1517,26 @@ int mpu3050_probe(struct i2c_client *client, const struct i2c_device_id *devid)
 #endif
 	return res;
 
- out_mpuirq_failed:
+out_mpuirq_failed:
 	misc_deregister(&i2c_mpu_device);
- out_misc_register_failed:
+out_misc_register_failed:
 	mpu3050_close(&mpu->mldl_cfg, client->adapter,
 		      accel_adapter, compass_adapter, pressure_adapter);
- out_whoami_failed:
+out_whoami_failed:
 	if (pdata && pdata->pressure.get_slave_descr && pdata->pressure.irq)
 		slaveirq_exit(&pdata->pressure);
- out_pressureirq_failed:
+out_pressureirq_failed:
 	if (pdata && pdata->compass.get_slave_descr && pdata->compass.irq)
 		slaveirq_exit(&pdata->compass);
- out_compassirq_failed:
+out_compassirq_failed:
 	if (pdata && pdata->accel.get_slave_descr && pdata->accel.irq)
 		slaveirq_exit(&pdata->accel);
- out_accelirq_failed:
+out_accelirq_failed:
 	kfree(mpu);
- out_alloc_data_failed:
- out_check_functionality_failed:
+out_alloc_data_failed:
+out_check_functionality_failed:
 	dev_err(&this_client->adapter->dev, "%s failed %d\n", __func__, res);
 	return res;
-
 }
 
 static int mpu3050_remove(struct i2c_client *client)

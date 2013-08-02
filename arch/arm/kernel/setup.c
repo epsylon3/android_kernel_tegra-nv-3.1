@@ -794,29 +794,32 @@ static void __init squash_mem_tags(struct tag *tag)
 			tag->hdr.tag = ATAG_NONE;
 }
 
-#if 1
+#if 0
+// #if defined (CONFIG_MACH_N1) || defined (CONFIG_MACH_BOSE_ATT)
 // N1_ICS : hacking console output
 char boot_command_line2[COMMAND_LINE_SIZE];
 char *str_replace(char *s, const char *olds, const char *news)
 {
- char *result, *sr;
- int i = 0;
- size_t oldlen = strlen(olds); if (oldlen < 1) return s;
- size_t newlen = strlen(news);
+	char *result, *sr;
+	int i = 0;
+	size_t oldlen = strlen(olds);
+	size_t newlen = strlen(news);
 
- sr = result = boot_command_line2;
- while (*s) {
-   if (memcmp(s, olds, oldlen) == 0) {
-     memcpy(sr, news, newlen);
-     sr += newlen;
-     s  += oldlen;
-   } else *sr++ = *s++;
-   if (++i == COMMAND_LINE_SIZE)
-       break;
- }
- *sr = '\0';
+	if (oldlen < 1) return s;
 
- return result;
+	sr = result = boot_command_line2;
+	while (*s) {
+		if (memcmp(s, olds, oldlen) == 0) {
+			memcpy(sr, news, newlen);
+			sr += newlen;
+			s  += oldlen;
+		} else *sr++ = *s++;
+		if (++i == COMMAND_LINE_SIZE)
+			break;
+	}
+	*sr = '\0';
+
+	return result;
 }
 #endif
 
@@ -935,11 +938,11 @@ void __init setup_arch(char **cmdline_p)
 
 #if 0
 // N1_ICS : hacking console output
-   boot_command_line[COMMAND_LINE_SIZE-1] = 0;
-   printk(KERN_ERR "old boot_command_line : %s\n", boot_command_line);
-   str_replace(boot_command_line, "console=ram", "console=ttyS0,115200n8");
-   strlcpy(boot_command_line, boot_command_line2, COMMAND_LINE_SIZE);
-   printk(KERN_ERR "new boot_command_line : %s\n", boot_command_line);
+	boot_command_line[COMMAND_LINE_SIZE-1] = 0;
+	printk(KERN_ERR "old boot_command_line : %s\n", boot_command_line);
+	str_replace(boot_command_line, "console=ram", "console=ttyS0,115200n8");
+	strlcpy(boot_command_line, boot_command_line2, COMMAND_LINE_SIZE);
+	printk(KERN_ERR "new boot_command_line : %s\n", boot_command_line);
 #endif
 
 	/* populate cmd_line too for later use, preserving boot_command_line */

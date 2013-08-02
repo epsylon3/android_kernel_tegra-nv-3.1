@@ -182,7 +182,7 @@ void DisableFSA9480Interrupts(void)
 	value = i2c_smbus_read_byte_data(client, FSA9480_REG_CTRL);
 
 	msleep(5);
-       value |= 0x01;
+	value |= 0x01;
 
 	ret = i2c_smbus_write_byte_data(client, FSA9480_REG_CTRL, value);
 	if (ret < 0)
@@ -235,11 +235,11 @@ void FSA9480_MhlSwitchSel(bool sw)
 
 	//struct power_supply *mhl_power_supply = power_supply_get_by_name("battery");
 	//	union power_supply_propval value;
-    printk("[FSA] mutex_lock\n");
+	printk("[FSA] mutex_lock\n");
 	//mutex_lock(&FSA9480_MhlSwitchSel_lock);//avoid race condtion between mhl and hpd
 	if(sw)
 	{
-               sii9234_cfg_power(1);
+		sii9234_cfg_power(1);
 		if (gv_intr2&0x1) //cts: fix for 3355
 		{
 			mhl_vbus = true;
@@ -268,11 +268,11 @@ void FSA9480_MhlSwitchSel(bool sw)
 			printk("[FSA] Turn off hdmi\n");
 			mhl_hpd_handler(false);
 		}
-                      if(mhl_power_supply==1)
-			{
-				mhl_power_supply=0;
-				local_pdata->charger_cb(FSA9480_DETACHED);
-			}
+                if(mhl_power_supply==1)
+		{
+			mhl_power_supply=0;
+			local_pdata->charger_cb(FSA9480_DETACHED);
+		}
 		mhl_vbus = false;
 		sii9234_cfg_power(0);	//Turn Off power to SiI9234
 		if (local_usbsw->pdata->mhldock_cb)
@@ -294,7 +294,7 @@ void FSA9480_MhlSwitchSel(bool sw)
 	/******************FSA-MHL-FSA Switching End*******************************/
 	//mutex_unlock(&FSA9480_MhlSwitchSel_lock);
 
-    printk("[FSA] mutex_unlock\n");
+	printk("[FSA] mutex_unlock\n");
 }
 EXPORT_SYMBOL(FSA9480_MhlSwitchSel);
 
@@ -310,7 +310,7 @@ void FSA9480_MhlTvOff(void)
 	{
 		msleep(5);
 		intr1 = i2c_smbus_read_byte_data(client, FSA9480_REG_INT1);
-	}while(!intr1);
+	} while (!intr1);
 
 	mhl_cable_status =0x08;//MHL_TV_OFF_CABLE_CONNECT;
 	EnableFSA9480Interrupts();
@@ -326,6 +326,7 @@ void FSA9480_MhlTvOff(void)
 }
 EXPORT_SYMBOL(FSA9480_MhlTvOff);
 #endif
+
 #if defined (CONFIG_MACH_BOSE_ATT)
 static struct fsa9480_usbsw *local_usbsw;
 
@@ -338,7 +339,7 @@ int FSA9480_Get_I2C_USB_Status(void)
 	dev1 = i2c_smbus_read_byte_data(client,FSA9480_REG_DEV_T1);
 	dev2 = i2c_smbus_read_byte_data(client,FSA9480_REG_DEV_T2);
 
-	   result = dev2 << 8 | dev1;
+	result = dev2 << 8 | dev1;
 	return result;
 }
 EXPORT_SYMBOL(FSA9480_Get_I2C_USB_Status);
@@ -665,7 +666,6 @@ static void fsa9480_detect_dev(struct fsa9480_usbsw *usbsw)
 	unsigned char val1, val2;
 	struct fsa9480_platform_data *pdata = usbsw->pdata;
 #if (defined(CONFIG_MHL_SWITCH) && defined(CONFIG_MHL_SII9234))
-
         local_pdata = usbsw->pdata;
 #endif
 	struct i2c_client *client = usbsw->client;

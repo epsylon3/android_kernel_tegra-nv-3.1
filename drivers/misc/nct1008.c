@@ -20,7 +20,6 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-
 #include <linux/interrupt.h>
 #include <linux/mutex.h>
 #include <linux/module.h>
@@ -37,29 +36,29 @@
 #define DRIVER_NAME "nct1008"
 
 /* Register Addresses */
-#define LOCAL_TEMP_RD				0x00
-#define EXTERNAL_TEMP_RD			0x01
-#define STATUS_RD					0x02
-#define CONFIG_RD					0x03
+#define LOCAL_TEMP_RD			0x00
+#define EXTERNAL_TEMP_RD		0x01
+#define STATUS_RD			0x02
+#define CONFIG_RD			0x03
 
-#define CONFIG_WR					0x09
-#define CONV_RATE_WR				0x0A
+#define CONFIG_WR			0x09
+#define CONV_RATE_WR			0x0A
 #define LOCAL_TEMP_HI_LIMIT_WR		0x0B
 #define EXT_TEMP_HI_LIMIT_HI_BYTE	0x0D
-#define OFFSET_WR					0x11
-#define EXT_THERM_LIMIT_WR			0x19
+#define OFFSET_WR			0x11
+#define EXT_THERM_LIMIT_WR		0x19
 #define LOCAL_THERM_LIMIT_WR		0x20
-#define THERM_HYSTERESIS_WR			0x21
+#define THERM_HYSTERESIS_WR		0x21
 
 /* Configuration Register Bits */
-#define EXTENDED_RANGE_BIT			(0x1 << 2)
-#define THERM2_BIT					(0x1 << 5)
-#define STANDBY_BIT					(0x1 << 6)
+#define EXTENDED_RANGE_BIT		(0x1 << 2)
+#define THERM2_BIT			(0x1 << 5)
+#define STANDBY_BIT			(0x1 << 6)
 
 /* Max Temperature Measurements */
 #define EXTENDED_RANGE_OFFSET		64U
-#define STANDARD_RANGE_MAX			127U
-#define EXTENDED_RANGE_MAX			(150U + EXTENDED_RANGE_OFFSET)
+#define STANDARD_RANGE_MAX		127U
+#define EXTENDED_RANGE_MAX		(150U + EXTENDED_RANGE_OFFSET)
 
 #define NCT1008_DELAY 1000
 
@@ -215,7 +214,7 @@ static void nct1008_re_enable(struct i2c_client *client)
 
 static void nct1008_enable(struct i2c_client *client)
 {
-	int ret;
+	//int ret;
 	struct nct1008_data *data = i2c_get_clientdata(client);
 	struct regulator *reg = regulator_get(NULL, "VADC_3V3");
 

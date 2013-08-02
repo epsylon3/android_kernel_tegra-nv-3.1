@@ -3,7 +3,7 @@
  *
  * driver supporting miscellaneous functions for Samsung boards
  *
- * COPYRIGHT(C) Samsung Electronics Co., Ltd. 2006-2010 All Right Reserved.
+ * COPYRIGHT(C) Samsung Electronics Co., Ltd. 2006-2010 All Rights Reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -68,6 +68,7 @@ static struct miscdevice sec_misc_device = {
 	.fops = &sec_misc_fops,
 };
 
+#if 0
 static void sec_set_usbpath(enum sec_usb_sel usb_sel)
 {
 #if 0
@@ -88,6 +89,7 @@ static void sec_set_usbpath(enum sec_usb_sel usb_sel)
 	}
 #endif
 }
+#endif
 
 void sec_init_usbpath(void)
 {
@@ -106,8 +108,8 @@ void sec_init_usbpath(void)
 
 static void sec_set_uartpath(enum sec_uart_sel uart_sel)
 {
-	pr_info("UART path switched to %s\n", (uart_sel)?"AP":"CP");
-	gpio_direction_output(GPIO_UART_SEL, (int)uart_sel);
+	pr_info("UART path switched to %s\n", (uart_sel) ? "AP" : "CP");
+	gpio_direction_output(GPIO_UART_SEL, (int) uart_sel);
 }
 
 void sec_init_uartpath(void)

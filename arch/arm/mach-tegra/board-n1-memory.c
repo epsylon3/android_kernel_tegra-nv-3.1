@@ -59,13 +59,13 @@ static const struct tegra_emc_table n1_emc_tables_samsung[] = {
 			0x00000008,   /* TCLKSTABLE */
 			0x00000002,   /* TCLKSTOP */
 			0x00000068,   /* TREFBW */
-            0x00000000,   /* QUSE_EXTRA */
-            0x00000003,   /* FBIO_CFG6 */
-            0x00000000,   /* ODT_WRITE */
-            0x00000000,   /* ODT_READ */
-            0x00000082,   /* FBIO_CFG5 */
-            0xa06a04ae,   /* CFG_DIG_DLL */
-            0x00080000,   /* DLL_XFORM_DQS */
+			0x00000000,   /* QUSE_EXTRA */
+			0x00000003,   /* FBIO_CFG6 */
+			0x00000000,   /* ODT_WRITE */
+			0x00000000,   /* ODT_READ */
+			0x00000082,   /* FBIO_CFG5 */
+			0xa06a04ae,   /* CFG_DIG_DLL */
+			0x00080000,   /* DLL_XFORM_DQS */
 			0x00000000,   /* DLL_XFORM_QUSE */
 			0x00000000,   /* ZCAL_REF_CNT */
 			0x00000003,   /* ZCAL_WAIT_CNT */
@@ -110,13 +110,13 @@ static const struct tegra_emc_table n1_emc_tables_samsung[] = {
 			0x00000008,   /* TCLKSTABLE */
 			0x00000002,   /* TCLKSTOP */
 			0x000000d0,   /* TREFBW */
-            0x00000000,   /* QUSE_EXTRA */
-            0x00000000,   /* FBIO_CFG6 */
-            0x00000000,   /* ODT_WRITE */
-            0x00000000,   /* ODT_READ */
-            0x00000082,   /* FBIO_CFG5 */
-            0xa06a04ae,   /* CFG_DIG_DLL */
-            0x00080000,   /* DLL_XFORM_DQS */
+			0x00000000,   /* QUSE_EXTRA */
+			0x00000000,   /* FBIO_CFG6 */
+			0x00000000,   /* ODT_WRITE */
+			0x00000000,   /* ODT_READ */
+			0x00000082,   /* FBIO_CFG5 */
+			0xa06a04ae,   /* CFG_DIG_DLL */
+			0x00080000,   /* DLL_XFORM_DQS */
 			0x00000000,   /* DLL_XFORM_QUSE */
 			0x00000000,   /* ZCAL_REF_CNT */
 			0x00000005,   /* ZCAL_WAIT_CNT */
@@ -161,13 +161,13 @@ static const struct tegra_emc_table n1_emc_tables_samsung[] = {
 			0x00000008,   /* TCLKSTABLE */
 			0x00000002,   /* TCLKSTOP */
 			0x00000138,   /* TREFBW */
-            0x00000000,   /* QUSE_EXTRA */
-            0x00000000,   /* FBIO_CFG6 */
-            0x00000000,   /* ODT_WRITE */
-            0x00000000,   /* ODT_READ */
-            0x00000082,   /* FBIO_CFG5 */
-            0xa06a04ae,   /* CFG_DIG_DLL */
-            0x00080000,   /* DLL_XFORM_DQS */
+			0x00000000,   /* QUSE_EXTRA */
+			0x00000000,   /* FBIO_CFG6 */
+			0x00000000,   /* ODT_WRITE */
+			0x00000000,   /* ODT_READ */
+			0x00000082,   /* FBIO_CFG5 */
+			0xa06a04ae,   /* CFG_DIG_DLL */
+			0x00080000,   /* DLL_XFORM_DQS */
 			0x00000000,   /* DLL_XFORM_QUSE */
 			0x00000000,   /* ZCAL_REF_CNT */
 			0x00000007,   /* ZCAL_WAIT_CNT */
@@ -192,7 +192,7 @@ static const struct tegra_emc_table n1_emc_tables_samsung[] = {
 			0x00000003,   /* WR_RCD */
 			0x00000002,   /* RRD */
 			0x00000002,   /* REXT */
-            0x00000003,   /* WDV */
+			0x00000003,   /* WDV */
 			0x00000006,   /* QUSE */
 			0x00000004,   /* QRST */
 			0x00000008,   /* QSAFE */
@@ -212,13 +212,13 @@ static const struct tegra_emc_table n1_emc_tables_samsung[] = {
 			0x00000008,   /* TCLKSTABLE */
 			0x00000002,   /* TCLKSTOP */
 			0x00000270,   /* TREFBW */
-            0x00000000,   /* QUSE_EXTRA */
+			0x00000000,   /* QUSE_EXTRA */
 			0x00000001,   /* FBIO_CFG6 */
 			0x00000000,   /* ODT_WRITE */
 			0x00000000,   /* ODT_READ */
 			0x00000082,   /* FBIO_CFG5 */
 			0xa04c04ae,   /* CFG_DIG_DLL */
-            0x007dea10,   /* DLL_XFORM_DQS */
+			0x007dea10,   /* DLL_XFORM_DQS */
 			0x00000000,   /* DLL_XFORM_QUSE */
 			0x00000000,   /* ZCAL_REF_CNT */
 			0x0000000e,   /* ZCAL_WAIT_CNT */
@@ -269,7 +269,7 @@ static const struct tegra_emc_table n1_emc_tables_samsung[] = {
 			0x00000000,   /* ODT_READ */
 			0x00000282,   /* FBIO_CFG5 */
 			0xe03c048b,   /* CFG_DIG_DLL */
-            0x007e0010,   /* DLL_XFORM_DQS */
+			0x007e0010,   /* DLL_XFORM_DQS */
 			0x00000000,   /* DLL_XFORM_QUSE */
 			0x00000000,   /* ZCAL_REF_CNT */
 			0x0000001b,   /* ZCAL_WAIT_CNT */

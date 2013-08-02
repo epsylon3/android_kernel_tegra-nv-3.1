@@ -27,6 +27,7 @@
 #include <linux/mfd/wm8994/wm8994_pdata.h>
 #include <linux/sec_jack.h>
 #include <mach/gpio.h>
+
 #include "gpio-names.h"
 #if defined (CONFIG_MACH_BOSE_ATT)
 #include <mach/gpio-bose.h>
@@ -37,6 +38,7 @@
 #ifdef CONFIG_PN544
 #include <linux/pn544.h>
 #endif
+
 #include <linux/switch.h>
 #include <linux/power_supply.h>
 #if defined (CONFIG_MACH_BOSE_ATT)
@@ -58,8 +60,8 @@
 #include <mach/tegra_das.h>
 #include <mach/otg_def.h>
 
-#define GPIO_AUDIO_I2C_SDA TEGRA_GPIO_PG3
-#define GPIO_AUDIO_I2C_SCL TEGRA_GPIO_PI0
+#define GPIO_AUDIO_I2C_SDA	TEGRA_GPIO_PG3
+#define GPIO_AUDIO_I2C_SCL	TEGRA_GPIO_PI0
 #define DEV_USB_OTG		(1 << 7)
 
 struct nct1008_temp_callbacks *callbacks;
@@ -155,7 +157,7 @@ static void tegra_set_dap_connection(u8 value)
 			das_writel(DAP_MS_SEL_MASTER | DAP_CTRL_SEL_DAP3, APB_MISC_DAS_DAP_CTRL_SEL_1);
 			das_writel((DAP_CTRL_SEL_DAP2), APB_MISC_DAS_DAP_CTRL_SEL_2);
 			break;
-       case dap_connection_bt_call:
+		case dap_connection_bt_call:
 			//DAP1
 			reg_val = das_readl(APB_MISC_DAS_DAP_CTRL_SEL_0);
 			reg_val &= ~(DAP_MS_SEL_DEFAULT_MASK << DAP_MS_SEL_SHIFT);
@@ -839,8 +841,6 @@ static struct platform_device tegra_gpio_i2c17_device = {
 		.platform_data = &tegra_gpio_i2c17_pdata,
 	}
 };
-
-
 
 #ifdef CONFIG_PN544
 static struct pn544_i2c_platform_data pn544_pdata = {

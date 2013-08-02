@@ -19,10 +19,14 @@
 #include "wm8994_samsung.h"
 #include <linux/mfd/max8907c.h>
 
+#ifdef CONFIG_SND_VOODOO
+#include "wm8994_voodoo.h"
+#endif
+
 /*
  * Debug Feature
  */
-#define SUBJECT "wm8994_n1.c"
+#define SUBJECT "wm8994_n1"
 
 /*
  * Definitions of tunning volumes for wm8994
@@ -1322,8 +1326,8 @@ int wm8994_configure_clock(struct snd_soc_codec *codec, int en)
 
 void audio_ctrl_mic_bias_gpio(struct wm8994_platform_data *pdata, enum mic_control enable)
 {
-	DEBUG_LOG("enable = [%d]", enable);
 	int mili_volt;
+	DEBUG_LOG("enable = [%d]", enable);
 
 	max8907c_adc_read_aux2(&mili_volt);
 	DEBUG_LOG("jack adc value = %d \n", mili_volt);
@@ -2459,13 +2463,16 @@ void wm8994_record_main_mic(struct snd_soc_codec *codec)
 
 	if (wm8994->input_source == DEFAULT)
 		audio_ctrl_mic_bias_gpio(wm8994->pdata, MAIN_MIC_ON);
+
+#ifdef CONFIG_SND_VOODOO_RECORD_PRESETS
+	voodoo_hook_record_main_mic();
+#endif
+
 }
 
 #if defined(CONFIG_MACH_N1_CHN)
 void wm8994_record_Voice_all(struct snd_soc_codec *codec)
 {
-	struct wm8994_priv *wm8994 = codec->drvdata;
-
 	u16 val;
 
 	val = wm8994_read(codec, WM8994_AIF1_ADC1_LEFT_MIXER_ROUTING);
@@ -2476,8 +2483,6 @@ void wm8994_record_Voice_all(struct snd_soc_codec *codec)
 }
 void wm8994_record_Voice_rx(struct snd_soc_codec *codec)
 {
-	struct wm8994_priv *wm8994 = codec->drvdata;
-
 	u16 val;
 
 	val = wm8994_read(codec, WM8994_AIF1_ADC1_LEFT_MIXER_ROUTING);
@@ -2601,8 +2606,6 @@ void wm8994_record_sub_mic(struct snd_soc_codec *codec)
 
 void wm8994_record_bluetooth(struct snd_soc_codec *codec)
 {
-	u16 val;
-
 	DEBUG_LOG("BT Record Path for Voice Command\n");
 
 	wm8994_write(codec,0x39,0x006c);
@@ -2623,7 +2626,6 @@ void wm8994_record_bluetooth(struct snd_soc_codec *codec)
 
 	wm8994_write(codec, WM8994_GPIO_10, 0x0100);
 	wm8994_write(codec, WM8994_GPIO_11, 0x0100);
-
 
 	/* Enable Dac1 and DAC2 and the Timeslot0 for AIF1 */
 	wm8994_write(codec, WM8994_POWER_MANAGEMENT_4, 0x3303);
@@ -3414,13 +3416,10 @@ void wm8994_set_playback_speaker_headset(struct snd_soc_codec *codec)
 
 void wm8994_set_playback_bluetooth(struct snd_soc_codec *codec)
 {
-	struct wm8994_priv *wm8994 = snd_soc_codec_get_drvdata(codec);
-	u16 val;
-
 	DEBUG_LOG("BT Playback Path for SCO");
 
-	wm8994_write(codec,0x39,0x006c);
-	wm8994_write(codec,0x01,0x0003);
+	wm8994_write(codec, 0x39, 0x006c);
+	wm8994_write(codec, 0x01, 0x0003);
 	msleep(50);
 
 	wm8994_write(codec, 0x102, 0x0003);
@@ -3694,7 +3693,6 @@ void wm8994_set_voicecall_common_setting(struct snd_soc_codec *codec)
 
 void wm8994_set_recording_during_voicecall(struct snd_soc_codec *codec)
 {
-	struct wm8994_priv *wm8994 = snd_soc_codec_get_drvdata(codec);
 	int val;
 
 	DEBUG_LOG("");

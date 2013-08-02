@@ -19,6 +19,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
+
 #include <linux/platform_device.h>
 #include <linux/module.h>
 #include <linux/device.h>
@@ -95,14 +96,14 @@ static const u8 all_regs_bank1[] = {
 #define I2C_M_WR 0 /* for i2c */
 #define I2c_M_RD 1 /* for i2c */
 
-#define SIG_MDNIE_UI_MODE			0
+#define SIG_MDNIE_UI_MODE		0
 #define SIG_MDNIE_VIDEO_MODE		1
 #define SIG_MDNIE_VIDEO_WARM_MODE	2
 #define SIG_MDNIE_VIDEO_COLD_MODE	3
 #define SIG_MDNIE_CAMERA_MODE		4
-#define SIG_MDNIE_NAVI				5
+#define SIG_MDNIE_NAVI			5
 #define SIG_MDNIE_GALLERY_MODE		6
-#define SIG_MDNIE_VT_MODE			7
+#define SIG_MDNIE_VT_MODE		7
 
 #define SIG_MDNIE_USERSELECT_DYNAMIC_MODE		0
 #define SIG_MDNIE_USERSELECT_STANDARD_MODE		1
@@ -158,21 +159,21 @@ typedef enum
 	mDNIe_NAVI,
 	mDNIe_GALLERY_MODE,
 	mDNIe_VT_MODE,
-}Lcd_mDNIe_UI;
+} Lcd_mDNIe_UI;
 
 typedef enum
 {
 	mDNIe_USERSELECT_DYNAMIC_MODE,
 	mDNIe_USERSELECT_STANDARD_MODE,
 	mDNIe_USERSELECT_MOVIE_MODE,
-}Lcd_mDNIe_UserSelect;
+} Lcd_mDNIe_UserSelect;
 
 typedef enum
 {
 	mode_type_CABC_none,
 	mode_type_CABC_on,
 	mode_type_CABC_off,
-}mDNIe_mode_CABC_type;
+} mDNIe_mode_CABC_type;
 
 static enum Lcd_CMC623_UI_mode current_cmc623_UI = CMC623_UI_MODE; // mDNIe Set Status Checking Value.
 static enum Lcd_CMC623_USERSELECT_mode current_cmc623_Userselect = CMC623_USERSELECT_STANDARD_MODE; // mDNIe User Select mode Set Status Checking Value.
@@ -196,7 +197,7 @@ static mDNIe_mode_CABC_type cmc623_cabc_mode[]=
 	mode_type_CABC_on,		// Video
 	mode_type_CABC_on,		// Video warm
 	mode_type_CABC_on,		// Video cold
-	mode_type_CABC_off, 	// Camera
+	mode_type_CABC_off, 		// Camera
 	mode_type_CABC_none,		// Navi
 };*/
 
@@ -213,11 +214,11 @@ typedef enum
 	LCD_TYPE_T7,
 	LCD_TYPE_T8,
 	LCD_TYPE_MAX,
-}Lcd_Type;
+} Lcd_Type;
 Lcd_Type lcd_type = 0;
 
 #define NUM_ITEM_POWER_LUT	9
-#define NUM_POWER_LUT	2
+#define NUM_POWER_LUT		2
 
 static unsigned char cmc623_Power_LUT[NUM_POWER_LUT][NUM_ITEM_POWER_LUT]={
 	{ 0x48, 0x4d, 0x44, 0x52, 0x48, 0x45, 0x40, 0x3d, 0x45 },	//cabcon3
@@ -338,7 +339,6 @@ static void cmc623_UserSelect_Mode_Change(mDNIe_data_type *mode)
 static void cmc623_Set_UserSelect_Mode(enum Lcd_CMC623_USERSELECT_mode mode, int cmc623_CABC_OnOff, int flag)
 {
 	int cabc_enable=0;
-	int lut_num;
 
 #ifdef CMC623_TUNING
 	printk(KERN_ERR "%s ignore for tuning mode\n", __func__);
@@ -459,7 +459,6 @@ static void cmc623_Set_Mode(enum Lcd_CMC623_UI_mode mode, int cmc623_CABC_OnOff,
 {
 	int cabc_enable=0;
 	int lut_num;
-	int mdnie_userselect ;
 	current_cmc623_UI = mode;
 
 	if(cmc623_CABC_OnOff)
@@ -566,7 +565,8 @@ static void cmc623_Set_Mode(enum Lcd_CMC623_UI_mode mode, int cmc623_CABC_OnOff,
 		//current_cmc623_UI = mode;
 		current_cmc623_CABC_OnOff = FALSE;
 	}
-	printk(KERN_INFO "[cmc623] cmc623_Set_Mode: current_cmc623_UI(%d), current_cmc623_CABC_OnOff(%d)->(%d) / OVE : %d \n",current_cmc623_UI, current_cmc623_CABC_OnOff, cabc_enable,current_cmc623_OutDoor_OnOff);
+	printk("[cmc623] cmc623_Set_Mode: current_cmc623_UI(%d), current_cmc623_CABC_OnOff(%d)->(%d) / OVE : %d \n",
+		current_cmc623_UI, current_cmc623_CABC_OnOff, cabc_enable,current_cmc623_OutDoor_OnOff);
 }
 //EXPORT_SYMBOL(cmc623_Set_Mode);
 
@@ -585,7 +585,8 @@ void cmc623_Set_Mode_Ext(enum Lcd_CMC623_UI_mode mode, u8 mDNIe_Outdoor_OnOff)
 	}
 	mutex_unlock(&cmc623_state_transaction_lock);
 
-	dprintk("[cmc623] cmc623_Set_Mode_Ext: current_cmc623_UI(%d), current_cmc623_OutDoor_OnOff(%d)  \n",current_cmc623_UI, current_cmc623_OutDoor_OnOff);
+	dprintk("[cmc623] cmc623_Set_Mode_Ext: current_cmc623_UI(%d), current_cmc623_OutDoor_OnOff(%d)\n",
+		current_cmc623_UI, current_cmc623_OutDoor_OnOff);
 }
 EXPORT_SYMBOL(cmc623_Set_Mode_Ext);
 
@@ -597,42 +598,42 @@ static bool cmc623_I2cWrite16( unsigned char Addr, unsigned long Data)
 	struct i2c_client *p_client;
 
 	if(!p_cmc623_data)
-		{
+	{
 		printk(KERN_ERR "p_cmc623_data is NULL\n");
 		return -ENODEV;
-		}
+	}
 	p_client = p_cmc623_data->client;
 
 	if((p_client == NULL))
-		{
+	{
 		printk("cmc623_I2cWrite16 p_client is NULL\n");
 		return -ENODEV;
-		}
+	}
 
 	if (!p_client->adapter)
-		{
+	{
 		printk("cmc623_I2cWrite16 p_client->adapter is NULL\n");
 		return -ENODEV;
-		}
+	}
 
 	if(TRUE == cmc623_state.suspended)
-		{
+	{
 		printk("cmc623 don't need writing while LCD off(a:%x,d:%lx)\n", Addr, Data);
 		return 0;
-		}
+	}
 
 	if(Addr == 0x0000)
-		{
+	{
 		if(Data == last_cmc623_Bank)
-			{
-			return 0;
-			}
-		last_cmc623_Bank = Data;
-		}
-	else if(Addr == 0x0001 && last_cmc623_Bank==0)
 		{
-		last_cmc623_Algorithm = Data;
+			return 0;
 		}
+		last_cmc623_Bank = Data;
+	}
+	else if(Addr == 0x0001 && last_cmc623_Bank==0)
+	{
+		last_cmc623_Algorithm = Data;
+	}
 
 	data[0] = Addr;
 	data[1] = ((Data >>8)&0xFF);
@@ -645,12 +646,12 @@ static bool cmc623_I2cWrite16( unsigned char Addr, unsigned long Data)
 	err = i2c_transfer(p_client->adapter, msg, 1);
 
 	if (err >= 0)
-		{
+	{
 		//printk("%s %d i2c transfer OK\n", __func__, __LINE__);/* add by inter.park */
 		return 0;
-		}
+	}
 
-	printk("%s i2c transfer error:%d(a:%x)\n", __func__, err, Addr);/* add by inter.park */
+	printk("%s i2c transfer error:%d(a:%x)\n", __func__, err, Addr); /* add by inter.park */
 	return err;
 }
 
@@ -663,29 +664,29 @@ static int cmc623_I2cRead16_direct(u8 reg, u16 *val, int isDirect)
 	struct i2c_client *p_client;
 
 	if(!p_cmc623_data)
-		{
+	{
 		printk(KERN_ERR "%s p_cmc623_data is NULL\n", __func__);
 		return -ENODEV;
-		}
+	}
 	p_client = p_cmc623_data->client;
 
 	if( (p_client == NULL))
-		{
+	{
 		printk("%s p_client is NULL\n", __func__);
 		return -ENODEV;
-		}
+	}
 
 	if (!p_client->adapter)
-		{
+	{
 		printk("%s p_client->adapter is NULL\n", __func__);
 		return -ENODEV;
-		}
+	}
 
 	if(!isDirect && regaddr == 0x0001 && last_cmc623_Algorithm!=0xffff && last_cmc623_Bank==0)
-		{
+	{
 		*val = last_cmc623_Algorithm;
 		return 0;
-		}
+	}
 
 	msg[0].addr   = p_client->addr;
 	msg[0].flags  = I2C_M_WR;
@@ -698,10 +699,10 @@ static int cmc623_I2cRead16_direct(u8 reg, u16 *val, int isDirect)
 	err = i2c_transfer(p_client->adapter, &msg[0], 2);
 
 	if (err >= 0)
-		{
+	{
 		*val = (data[0]<<8) | data[1];
 		return 0;
-		}
+	}
 	printk(KERN_ERR "%s %d i2c transfer error: %d\n", __func__, __LINE__, err);/* add by inter.park */
 
 	return err;
@@ -916,7 +917,7 @@ static int cmc623_load_data(void)
 	pos = 0;
 	memset(dp, 0, l);
 	kloge("== Before vfs_read ======");
-	ret = vfs_read(filp, (char __user *)dp, l, &pos);   // P1_LSJ : DE08 : ¿©±â¼­ Á×À½
+	ret = vfs_read(filp, (char __user *)dp, l, &pos);   // P1_LSJ : DE08 : \BF\A9\B1â¼­ \C1\D7\C0\BD
 	kloge("== After vfs_read ======");
 
 	if(ret != l)
@@ -1383,7 +1384,7 @@ static ssize_t mdnieset_user_select_file_cmd_store(struct device *dev,
 			break;
 
 		default:
-			printk("\mdnieset_user_select_file_cmd_store value is wrong : value(%d)\n",value);
+			pr_warn("%s value is wrong : value(%d)\n", __func__, value);
 			break;
 	}
 

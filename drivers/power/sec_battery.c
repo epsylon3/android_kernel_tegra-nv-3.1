@@ -11,7 +11,6 @@
  * published by the Free Software Foundation.
  */
 
-
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/delay.h>
@@ -34,17 +33,17 @@
 
 #define POLLING_INTERVAL	(30 * 1000)
 
-#define FAST_POLL	40	/* 40 sec */
-#define SLOW_POLL	(30*60)	/* 30 min */
+#define FAST_POLL		40	/* 40 sec */
+#define SLOW_POLL		(30*60)	/* 30 min */
 
 #if 0
 #define FULL_CHARGING_TIME	(6 * 60 *  60 * HZ)	/* 6hr */
 #define RECHARGING_TIME		(90 * 60 * HZ)		/* 1.5hr */
 #endif
 #define FULL_CHARGING_TIME	(6 * 60 *  60)	/* 6hr */
-#define RECHARGING_TIME		(90 * 60 )/* 1.5hr */
+#define RECHARGING_TIME		(90 * 60 )	/* 1.5hr */
 
-#define RECHARGING_VOLTAGE	(4130 * 1000)		/* 4.13 V */
+#define RECHARGING_VOLTAGE	(4130 * 1000)	/* 4.13 V */
 
 #define FG_T_SOC		0
 #define FG_T_VCELL		1
@@ -52,9 +51,9 @@
 #define FG_T_ONLINE		3
 
 #define HIGH_BLOCK_TEMP		600
-#define HIGH_RECOVER_TEMP		400
+#define HIGH_RECOVER_TEMP	400
 #define LOW_BLOCK_TEMP		(-30)
-#define LOW_RECOVER_TEMP		0
+#define LOW_RECOVER_TEMP	0
 #define TEMP_BLOCK_COUNT	3
 
 #define BAT_DET_COUNT		0
@@ -95,11 +94,11 @@ struct sec_bat_info {
 
 	char			*fuel_gauge_name;
 	char			*charger_name;
-	char 		*sub_charger_name;
+	char 			*sub_charger_name;
 
 	unsigned int		adc_arr_size;
 	struct sec_bat_adc_table_data *adc_table;
-	unsigned int adc_channel;
+	unsigned int		adc_channel;
 
 	struct power_supply	psy_bat;
 	struct power_supply	psy_usb;
@@ -112,10 +111,10 @@ struct sec_bat_info {
 	enum cable_type_t       cable_type;
 	enum batt_full_t	batt_full_status;
 
-	int				batt_temp;	/* Battery Temperature (C) */
-	int				batt_temp_high_cnt;
-	int				batt_temp_low_cnt;
-	int				batt_temp_recover_cnt;
+	int			batt_temp;	/* Battery Temperature (C) */
+	int			batt_temp_high_cnt;
+	int			batt_temp_low_cnt;
+	int			batt_temp_recover_cnt;
 	unsigned int		batt_health;
 	unsigned int		batt_vcell;
 	unsigned int		batt_soc;
@@ -132,15 +131,15 @@ struct sec_bat_info {
 	unsigned long		charging_start_time;
 	unsigned int		recharging_status;
 
-	unsigned int (*get_lpcharging_state)(void);
-	bool use_sub_charger;
+	unsigned int		(*get_lpcharging_state)(void);
+	bool			use_sub_charger;
 
-	int present;
-	int present_count;
-	void (*get_init_cable_state)(struct power_supply *psy);
-	int (*get_temperature)(void);
-	bool		slow_poll;
-	ktime_t		last_poll;
+	int			present;
+	int			present_count;
+	void			(*get_init_cable_state)(struct power_supply *psy);
+	int			(*get_temperature)(void);
+	bool			slow_poll;
+	ktime_t			last_poll;
 };
 
 static char *supply_list[] = {
@@ -361,13 +360,14 @@ static int sec_bat_get_temp(struct sec_bat_info *info)
 	int temp = info->batt_temp;
 	int temp_adc = sec_bat_read_temp(info);
 	int health = info->batt_health;
-	int low = 0;
-	int high = info->adc_arr_size - 1;
-	int mid = 0;
 
 #ifdef CONFIG_SENSORS_NCT1008
 	temp = temp_adc;
 #else
+	int low = 0;
+	int high = info->adc_arr_size - 1;
+	int mid = 0;
+
 	if (!info->adc_table || !info->adc_arr_size) {
 		/* using fake temp*/
 		info->batt_temp = 250;
@@ -386,7 +386,6 @@ static int sec_bat_get_temp(struct sec_bat_info *info)
 
 	temp = info->adc_table[mid].temperature;
 #endif
-
 
 	info->batt_temp = temp;
 	if (temp >= HIGH_BLOCK_TEMP) {
@@ -449,7 +448,7 @@ static void sec_bat_update_info(struct sec_bat_info *info)
 
 	if (!psy_main &&  !psy_sub) {
 		dev_err(info->dev, "%s: fail to get charger ps\n", __func__);
-		return -ENODEV;
+		return;
 	}
 
 	info->batt_soc = sec_bat_get_fuelgauge_data(info, FG_T_SOC);
@@ -709,7 +708,7 @@ static void sec_bat_check_vf(struct sec_bat_info *info)
 
 	if (!psy) {
 		dev_err(info->dev, "%s: fail to get charger ps\n", __func__);
-		return -ENODEV;
+		return;
 	}
 
 	/* first vf check */
@@ -820,7 +819,7 @@ static int sec_bat_set_property(struct power_supply *ps,
 			if (!psy) {
 				pr_err("%s: Fail to get fuelgauge ps\n",
 					__func__);
-				return;
+				return -ENODEV;
 			}
 			value.intval = POWER_SUPPLY_STATUS_FULL;
 			psy->set_property(psy, POWER_SUPPLY_PROP_STATUS,
@@ -1170,7 +1169,7 @@ static ssize_t sec_bat_show_property(struct device *dev,
 	return i;
 }
 
-extern void max17043_reset_soc();
+extern void max17043_reset_soc(void);
 
 static ssize_t sec_bat_store(struct device *dev,
 			     struct device_attribute *attr,
@@ -1194,6 +1193,9 @@ static ssize_t sec_bat_store(struct device *dev,
 			if (x == 1) {
 				info->batt_lp_charging = 1;
 				lpm_mode_flag = 1;
+			} else if (x == 0) {
+				info->batt_lp_charging = 0;
+				lpm_mode_flag = 0;
 			}
 			ret = count;
 		}

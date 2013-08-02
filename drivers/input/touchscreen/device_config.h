@@ -13,112 +13,106 @@
 
 #define __MXT224E_CONFIG__
 
-
-
 /* SPT_USERDATA_T38 INSTANCE 0 */
-#define T38_USERDATA0             0
-#define T38_USERDATA1             4     /* CAL_THR */
-#define T38_USERDATA2             15     /* num_of_antitouch */
-#define T38_USERDATA3             0
-#define T38_USERDATA4             0	/* MXT_ADR_T8_ATCHFRCCALRATIO for normal */
-#define T38_USERDATA5             0
-#define T38_USERDATA6             0
-#define T38_USERDATA7			0
+#define T38_USERDATA0		0
+#define T38_USERDATA1		4	/* CAL_THR */
+#define T38_USERDATA2		15	/* num_of_antitouch */
+#define T38_USERDATA3		0
+#define T38_USERDATA4		0	/* MXT_ADR_T8_ATCHFRCCALRATIO for normal */
+#define T38_USERDATA5		0
+#define T38_USERDATA6		0
+#define T38_USERDATA7		0
 
-
-#define T7_IDLEACQINT             64
-#define T7_ACTVACQINT             255
-#define T7_ACTV2IDLETO            25
+#define T7_IDLEACQINT		64
+#define T7_ACTVACQINT		255
+#define T7_ACTV2IDLETO		25
 
 /* _GEN_ACQUISITIONCONFIG_T8 INSTANCE 0 */
-#define T8_CHRGTIME		45	   /* 6 - 60  * 83 ns */
-#define T8_CHRGTIME_TA	31	   /* 6 - 60  * 83 ns */
-#define T8_ATCHDRIFT              0
-#define T8_TCHDRIFT               5
-#define T8_DRIFTST                1
-#define T8_TCHAUTOCAL             0
-#define T8_SYNC                   0
-#define T8_ATCHCALST			3
-#define T8_ATCHCALSTHR			20
-#define T8_ATCHFRCCALTHR		127		/* V2.0 added */
-#define T8_ATCHFRCCALRATIO		127		/* V2.0 added */
+#define T8_CHRGTIME		45	/* 6 - 60  * 83 ns */
+#define T8_CHRGTIME_TA		31	/* 6 - 60  * 83 ns */
+#define T8_ATCHDRIFT		0
+#define T8_TCHDRIFT		5
+#define T8_DRIFTST		1
+#define T8_TCHAUTOCAL		0
+#define T8_SYNC			0
+#define T8_ATCHCALST		3
+#define T8_ATCHCALSTHR		20
+#define T8_ATCHFRCCALTHR	127	/* V2.0 added */
+#define T8_ATCHFRCCALRATIO	127	/* V2.0 added */
 
 
 
 /* TOUCH_MULTITOUCHSCREEN_T9 INSTANCE 0 */
-#define T9_CTRL                   0x8B
-#define T9_XORIGIN                0
-#define T9_YORIGIN                0
-#define T9_XSIZE                  18
-#define T9_YSIZE                  11
-#define T9_AKSCFG                 1
-#define T9_BLEN                   0x10
-#define T9_TCHTHR		  32
-#define T9_TCHDI                  2
-#define T9_ORIENT                 1
-#define T9_MRGTIMEOUT             10
-#define T9_MOVHYSTI               1
-#define T9_MOVHYSTN               1
-#define T9_MOVFILTER              0x2F
-#define T9_NUMTOUCH               5
-#define T9_MRGHYST                70
-#define T9_MRGTHR                 70
-#define T9_AMPHYST                10
-#define T9_XRANGE                 (800-1)
-#define T9_YRANGE                 (480-1)
-#define T9_XLOCLIP                20
-#define T9_XHICLIP                20
-#define T9_YLOCLIP                40
-#define T9_YHICLIP                31
-#define T9_XEDGECTRL              143
-#define T9_XEDGEDIST              40
-#define T9_YEDGECTRL              143
-#define T9_YEDGEDIST              80
-#define T9_JUMPLIMIT              18
-#define T9_TCHHYST                5	 /* V2.0 or MXT224E added */
-#define T9_XPITCH                 50	 /* MXT224E added */
-#define T9_YPITCH                 50	 /* MXT224E added */
-#define T9_NEXTTCHDI              2
+#define T9_CTRL			0x8B
+#define T9_XORIGIN		0
+#define T9_YORIGIN		0
+#define T9_XSIZE		18
+#define T9_YSIZE		11
+#define T9_AKSCFG		1
+#define T9_BLEN			0x10
+#define T9_TCHTHR		32
+#define T9_TCHDI		2
+#define T9_ORIENT		1
+#define T9_MRGTIMEOUT		10
+#define T9_MOVHYSTI		1
+#define T9_MOVHYSTN		1
+#define T9_MOVFILTER		0x2F
+#define T9_NUMTOUCH		5
+#define T9_MRGHYST		70
+#define T9_MRGTHR		70
+#define T9_AMPHYST		10
+#define T9_XRANGE		(800-1)
+#define T9_YRANGE		(480-1)
+#define T9_XLOCLIP		20
+#define T9_XHICLIP		20
+#define T9_YLOCLIP		40
+#define T9_YHICLIP		31
+#define T9_XEDGECTRL		143
+#define T9_XEDGEDIST		40
+#define T9_YEDGECTRL		143
+#define T9_YEDGEDIST		80
+#define T9_JUMPLIMIT		18
+#define T9_TCHHYST		5	/* V2.0 or MXT224E added */
+#define T9_XPITCH		50	/* MXT224E added */
+#define T9_YPITCH		50	/* MXT224E added */
+#define T9_NEXTTCHDI		2
 
 /* TOUCH_KEYARRAY_T15 */
-#define T15_CTRL                  0x83 /* single key configuration*/  /* 0x03 = multi-key */
-#define T15_XORIGIN               16
-#define T15_XORIGIN_4KEY		14
-#define T15_YORIGIN			11
-#define T15_XSIZE				2
+#define T15_CTRL		0x83	/* single key configuration (0x03 = multi-key) */
+#define T15_XORIGIN		16
+#define T15_XORIGIN_4KEY	14
+#define T15_YORIGIN		11
+#define T15_XSIZE		2
 #define T15_XSIZE_4KEY		4
-#define T15_YSIZE                 1
-#define T15_AKSCFG                3
-#define T15_BLEN                  0
-#define T15_TCHTHR                60
-#define T15_TCHDI                 3
-#define T15_RESERVED_0            0
-#define T15_RESERVED_1            0
-
+#define T15_YSIZE		1
+#define T15_AKSCFG		3
+#define T15_BLEN		0
+#define T15_TCHTHR		60
+#define T15_TCHDI		3
+#define T15_RESERVED_0		0
+#define T15_RESERVED_1		0
 
 /* SPT_COMMSCONFIG_T18 */
-#define T18_CTRL                  0
-#define T18_COMMAND               0
-
-
+#define T18_CTRL		0
+#define T18_COMMAND		0
 
 /* SPT_GPIOPWM_T19 INSTANCE 0 */
-#define T19_CTRL                  0
-#define T19_REPORTMASK            0
-#define T19_DIR                   0
-#define T19_INTPULLUP             0
-#define T19_OUT                   0
-#define T19_WAKE                  0
-#define T19_PWM                   0
-#define T19_PERIOD                0
-#define T19_DUTY_0                0
-#define T19_DUTY_1                0
-#define T19_DUTY_2                0
-#define T19_DUTY_3                0
-#define T19_TRIGGER_0             0
-#define T19_TRIGGER_1             0
-#define T19_TRIGGER_2             0
-#define T19_TRIGGER_3             0
+#define T19_CTRL		0
+#define T19_REPORTMASK		0
+#define T19_DIR			0
+#define T19_INTPULLUP		0
+#define T19_OUT			0
+#define T19_WAKE		0
+#define T19_PWM			0
+#define T19_PERIOD		0
+#define T19_DUTY_0		0
+#define T19_DUTY_1		0
+#define T19_DUTY_2		0
+#define T19_DUTY_3		0
+#define T19_TRIGGER_0		0
+#define T19_TRIGGER_1		0
+#define T19_TRIGGER_2		0
+#define T19_TRIGGER_3		0
 
 
 /* TOUCH_PROXIMITY_T23 */
@@ -185,8 +179,8 @@
 #else
 #define T42_CTRL                  0x03
 #define T42_APPRTHR               60   /* 0 (TCHTHR/4), 1 to 255 */
-#define T42_MAXAPPRAREA           50	/* 33   /* 0 (40ch), 1 to 255 */
-#define T42_MAXTCHAREA            50	/* 33   /* 0 (35ch), 1 to 255 */
+#define T42_MAXAPPRAREA           50	/* 33 -- 0 (40ch), 1 to 255 */
+#define T42_MAXTCHAREA            50	/* 33 -- 0 (35ch), 1 to 255 */
 #define T42_SUPSTRENGTH           128   /* 0 (128), 1 to 255 */
 #define T42_SUPEXTTO              0   /* 0 (never expires), 1 to 255 (timeout in cycles) */
 #define T42_MAXNUMTCHS            0   /* 0 to 9 (maximum number of touches minus 1) */

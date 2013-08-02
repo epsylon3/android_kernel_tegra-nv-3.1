@@ -35,29 +35,21 @@
 #include <mach/dc.h>
 #include <mach/fb.h>
 
-
 #include "devices.h"
 #include "gpio-names.h"
 #include "board.h"
 
-#define N1_HDMI_ENABLE 0
-
-#if N1_HDMI_ENABLE
+#if CONFIG_MHL_SII9234
 #define n1_hdmi_hpd	TEGRA_GPIO_PN7
 #endif
 
 #ifdef CONFIG_TEGRA_DC
-#if N1_HDMI_ENABLE
+#if CONFIG_MHL_SII9234
 static struct regulator *n1_hdmi_reg = NULL;
 static struct regulator *n1_hdmi_pll = NULL;
-#endif
-#endif
 
-
-#ifdef CONFIG_TEGRA_DC
 static int n1_hdmi_enable(void)
 {
-#if N1_HDMI_ENABLE
 	if (!n1_hdmi_reg) {
 		n1_hdmi_reg = regulator_get(NULL, "avdd_hdmi"); /* LD011 */
 		if (IS_ERR_OR_NULL(n1_hdmi_reg)) {
@@ -79,19 +71,18 @@ static int n1_hdmi_enable(void)
 		}
 	}
 	regulator_enable(n1_hdmi_pll);
-#endif
+
 	return 0;
 }
 
 static int n1_hdmi_disable(void)
 {
-#if N1_HDMI_ENABLE
 	regulator_disable(n1_hdmi_reg);
 	regulator_disable(n1_hdmi_pll);
-#endif
 
 	return 0;
 }
+#endif /* CONFIG_MHL_SII9234 */
 
 static struct resource n1_disp1_resources[] = {
 	{
@@ -111,7 +102,8 @@ static struct resource n1_disp1_resources[] = {
 		.flags	= IORESOURCE_MEM,
 	},
 };
-#if N1_HDMI_ENABLE
+
+#if CONFIG_MHL_SII9234
 static struct resource n1_disp2_resources[] = {
 	{
 		.name	= "irq",
@@ -136,7 +128,7 @@ static struct resource n1_disp2_resources[] = {
 		.flags	= IORESOURCE_MEM,
 	},
 };
-#endif
+#endif /* CONFIG_MHL_SII9234 */
 
 static struct tegra_dc_mode n1_panel_modes[] = {
 	{
@@ -199,7 +191,7 @@ static struct tegra_dc_out n1_disp1_out = {
 	.n_out_sel_configs = ARRAY_SIZE(n1_dc_out_pin_sel_config),
 };
 
-#if N1_HDMI_ENABLE
+#if CONFIG_MHL_SII9234
 static struct tegra_dc_out n1_disp2_out = {
 	.type		= TEGRA_DC_OUT_HDMI,
 	.flags		= TEGRA_DC_OUT_HOTPLUG_HIGH,
@@ -215,7 +207,7 @@ static struct tegra_dc_out n1_disp2_out = {
 	.enable		= n1_hdmi_enable,
 	.disable	= n1_hdmi_disable,
 };
-#endif
+#endif /* CONFIG_MHL_SII9234 */
 
 static struct tegra_fb_data n1_fb_data = {
 	.win		= 0,
@@ -225,7 +217,7 @@ static struct tegra_fb_data n1_fb_data = {
 	.flags		= TEGRA_FB_FLIP_ON_PROBE,
 };
 
-#if N1_HDMI_ENABLE
+#if CONFIG_MHL_SII9234
 static struct tegra_fb_data n1_hdmi_fb_data = {
 	.win		= 0,
 	.xres		= 480,
@@ -233,7 +225,7 @@ static struct tegra_fb_data n1_hdmi_fb_data = {
 	.bits_per_pixel	= 32,
 	.flags		= TEGRA_FB_FLIP_ON_PROBE,
 };
-#endif
+#endif /* CONFIG_MHL_SII9234 */
 
 static struct tegra_dc_platform_data n1_disp1_pdata = {
 	.flags		= TEGRA_DC_FLAG_ENABLED,
@@ -250,7 +242,8 @@ static struct nvhost_device n1_disp1_device = {
 		.platform_data = &n1_disp1_pdata,
 	},
 };
-#if N1_HDMI_ENABLE
+
+#if CONFIG_MHL_SII9234
 static struct tegra_dc_platform_data n1_disp2_pdata = {
 	.flags		= 0,
 	.default_out	= &n1_disp2_out,
@@ -266,8 +259,8 @@ static struct nvhost_device n1_disp2_device = {
 		.platform_data = &n1_disp2_pdata,
 	},
 };
-#endif
-#endif
+#endif /* CONFIG_MHL_SII9234 */
+#endif /* CONFIG_TEGRA_DC */
 
 static struct nvmap_platform_carveout n1_carveouts[] = {
 	[0] = NVMAP_HEAP_CARVEOUT_IRAM_INIT,
@@ -325,7 +318,6 @@ struct early_suspend n1_panel_early_suspender;
 
 static void n1_panel_early_suspend(struct early_suspend *h)
 {
-	unsigned i;
 	printk(KERN_INFO "\n ************ %s : %d\n", __func__, __LINE__);
 
 	n1_panel_disable();
@@ -337,17 +329,10 @@ static void n1_panel_early_suspend(struct early_suspend *h)
 		fb_blank(registered_fb[1], FB_BLANK_NORMAL);
 
 #ifdef CONFIG_TEGRA_CONVSERVATIVE_GOV_ON_EARLYSUPSEND
-	cpufreq_save_default_governor();
-	cpufreq_set_conservative_governor();
-        cpufreq_set_conservative_governor_param("up_threshold",
-			SET_CONSERVATIVE_GOVERNOR_UP_THRESHOLD);
-
-	cpufreq_set_conservative_governor_param("down_threshold",
-			SET_CONSERVATIVE_GOVERNOR_DOWN_THRESHOLD);
-
-	cpufreq_set_conservative_governor_param("freq_step",
-		SET_CONSERVATIVE_GOVERNOR_FREQ_STEP);
-
+	cpufreq_store_default_gov();
+	if (cpufreq_change_gov(cpufreq_conservative_gov))
+		 pr_err("Early_suspend: Error changing governor to %s\n",
+			cpufreq_conservative_gov);
 #endif
 
 	cmc623_suspend(NULL);
@@ -359,7 +344,8 @@ static void n1_panel_late_resume(struct early_suspend *h)
 	printk(KERN_INFO "-- start of  %s : %d\n", __func__, __LINE__);
 
 #ifdef CONFIG_TEGRA_CONVSERVATIVE_GOV_ON_EARLYSUPSEND
-	cpufreq_restore_default_governor();
+	if (cpufreq_restore_default_gov())
+		pr_err("Early_suspend: Unable to restore governor\n");
 #endif
 	for (i = 0; i < num_registered_fb; i++)
 		fb_blank(registered_fb[i], FB_BLANK_UNBLANK);
@@ -375,7 +361,7 @@ int __init n1_panel_init(void)
 	int err;
 	struct resource __maybe_unused *res;
 
-#if N1_HDMI_ENABLE
+#if CONFIG_MHL_SII9234
 	tegra_gpio_enable(n1_hdmi_hpd);
 	gpio_request(n1_hdmi_hpd, "hdmi_hpd");
 	gpio_direction_input(n1_hdmi_hpd);
@@ -411,7 +397,7 @@ int __init n1_panel_init(void)
 		min(tegra_fb_size, tegra_bootloader_fb_size));
 
 #if defined(CONFIG_TEGRA_GRHOST) && defined(CONFIG_TEGRA_DC)
-#if N1_HDMI_ENABLE
+#if CONFIG_MHL_SII9234
 	res = nvhost_get_resource_byname(&n1_disp2_device,
 					 IORESOURCE_MEM, "fbmem");
 	res->start = tegra_fb2_start;
@@ -422,7 +408,7 @@ int __init n1_panel_init(void)
 	if (!err)
 		err = nvhost_device_register(&n1_disp1_device);
 
-#if N1_HDMI_ENABLE
+#if CONFIG_MHL_SII9234
 	if (!err)
 		err = nvhost_device_register(&n1_disp2_device);
 #endif

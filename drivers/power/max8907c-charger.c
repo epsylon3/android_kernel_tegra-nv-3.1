@@ -91,7 +91,7 @@ static int max8907c_charger_removal_irq(struct max8907c_charger *charger,
 	return ret;
 }
 
-/* FACTORY TEST BINARY */
+#if 0 /* FACTORY TEST BINARY */
 static irqreturn_t max8907c_charger_vchg_r_f_isr(int irq, void *dev_id)
 {
 	int ret = 0;
@@ -123,6 +123,7 @@ static irqreturn_t max8907c_charger_vchg_r_f_isr(int irq, void *dev_id)
 
 	return IRQ_HANDLED;
 }
+#endif
 
 static irqreturn_t max8907c_charger_removal_isr(int irq, void *dev_id)
 {

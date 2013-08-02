@@ -204,6 +204,8 @@ int mpu3050_get_config_pressure(struct mldl_cfg *mldl_cfg,
 int get_MPUReg(struct mldl_cfg *mldl_cfg, void *gyro_handle);
 int set_MPUReg(struct mldl_cfg *mldl_cfg, void *gyro_handle);
 
+#include <linux/device.h>
+
 int sensors_register(struct device *dev, void *drvdata,
 	    struct device_attribute *attributes[], char *name);
 #endif				/* __MLDL_CFG_H__ */

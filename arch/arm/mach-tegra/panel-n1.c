@@ -50,13 +50,17 @@ struct device *tune_lcd_dev;
 #if LCD_ONOFF_TEST
 static int lcdonoff_test=0;
 #define TEGRA_GPIO_PR3		139
-#define GPIO_LCD_LDO_LED_EN TEGRA_GPIO_PR3
+#define GPIO_LCD_LDO_LED_EN	TEGRA_GPIO_PR3
 #endif
+
 static int initialized=0;
 
 static struct spi_device *n1_disp1_spi;
 static struct regulator *reg_lcd_1v8, *reg_lcd_3v0;
+
+#if 0
 static struct early_suspend n1_panel_early_suspend;
+#endif
 
 static void n1_panel_config_pins(void);
 static void n1_panel_reconfig_pins(void);
@@ -130,14 +134,15 @@ int n1_panel_pre_enable(void)
 	usleep_range(100000, 100000);
 	gpio_set_value(GPIO_LCD_LDO_LED_EN, 1);
 
-	printk(KERN_INFO "-- end of %s : %d  +\n", __func__, __LINE__);
+	printk(KERN_INFO "-- end of %s\n", __func__);
+	return 0;
 
 }
-SYMBOL_EXPRORT(n1_panel_pre_enable);
+EXPORT_SYMBOL(n1_panel_pre_enable);
 
 static int n1_panel_enable(void)
 {
-	printk(KERN_INFO "\n ************ %s : %d  +\n", __func__, __LINE__);
+	printk(KERN_INFO "-- start of %s\n", __func__);
 
 	regulator_enable(reg_lcd_1v8);
 	regulator_enable(reg_lcd_3v0);
@@ -146,12 +151,12 @@ static int n1_panel_enable(void)
 	gpio_set_value(n1_lvds_reset, 1);
 	//gpio_set_value(GPIO_LCD_LDO_LED_EN, 1);
 
-    msleep(10);//10ms
-    //Pushing DC data out 10 msec after from LCD reset.
+	msleep(10);//10ms
+	//Pushing DC data out 10 msec after from LCD reset.
 	if (initialized)
 		tegra_fb_dc_data_out(registered_fb[0]);
 
-    msleep(40);//40ms
+	msleep(40);//40ms
 	msleep(50);//50ms
 	msleep(10);//50ms
 
@@ -172,7 +177,7 @@ static int n1_panel_enable(void)
 
 	gpio_set_value(GPIO_LCD_LDO_LED_EN, 1);
 
-	printk(KERN_INFO "\n ************ %s : %d  +\n", __func__, __LINE__);
+	printk(KERN_INFO "-- end of %s\n", __func__);
 
 	return 0;
 }
@@ -204,51 +209,55 @@ int n1_panel_disable(void)
 	n1_panel_config_pins();
 	return 0;
 }
-SYMBOL_EXPORT(n1_panel_disable);
+EXPORT_SYMBOL(n1_panel_disable);
 
 
 static void n1_panel_config_pins(void)
 {
-    tegra_gpio_enable(TEGRA_GPIO_PN4);
-    gpio_request(TEGRA_GPIO_PN4, "SFIO_LCD_NCS");
-    gpio_direction_output(TEGRA_GPIO_PN4, 0);
-    tegra_gpio_enable(TEGRA_GPIO_PZ4);
-    gpio_request(TEGRA_GPIO_PZ4, "SFIO_LCD_SCLK");
-    gpio_direction_output(TEGRA_GPIO_PZ4, 0);
+	tegra_gpio_enable(TEGRA_GPIO_PN4);
+	gpio_request(TEGRA_GPIO_PN4, "SFIO_LCD_NCS");
+	gpio_direction_output(TEGRA_GPIO_PN4, 0);
+	tegra_gpio_enable(TEGRA_GPIO_PZ4);
+	gpio_request(TEGRA_GPIO_PZ4, "SFIO_LCD_SCLK");
+	gpio_direction_output(TEGRA_GPIO_PZ4, 0);
 }
 
 static void n1_panel_reconfig_pins(void)
 {
-    /* LCD_nCS */
-    tegra_gpio_disable(TEGRA_GPIO_PN4);
-    /* LCD_SCLK */
-    tegra_gpio_disable(TEGRA_GPIO_PZ4);
+	/* LCD_nCS */
+	tegra_gpio_disable(TEGRA_GPIO_PN4);
+	/* LCD_SCLK */
+	tegra_gpio_disable(TEGRA_GPIO_PZ4);
 	gpio_free(TEGRA_GPIO_PN4);
 	gpio_free(TEGRA_GPIO_PZ4);
 }
 
+
+#ifndef CONFIG_HAS_EARLYSUSPEND
 static int panel_n1_spi_suspend(struct spi_device *spi, pm_message_t message)
 {
-	printk(KERN_INFO "\n ************ %s : %d \n", __func__, __LINE__);
+	printk(KERN_INFO "-- start of %s\n", __func__);
 	n1_panel_disable();
-    n1_panel_config_pins();
-    return 0;
-}
-
-static int panel_n1_spi_shutdown(struct spi_device *spi, pm_message_t message)
-{
-	printk(KERN_INFO "\n ************ %s : %d \n", __func__, __LINE__);
-	n1_panel_disable();
+	n1_panel_config_pins();
 	return 0;
 }
 
 static int panel_n1_spi_resume(struct spi_device *spi)
 {
-	printk(KERN_INFO "\n ************ %s : %d \n", __func__, __LINE__);
-    n1_panel_reconfig_pins();
-    n1_panel_enable();
+	printk(KERN_INFO "-- start of %s\n", __func__);
+	n1_panel_reconfig_pins();
+	n1_panel_enable();
 	return 0;
 }
+#endif
+
+
+static void panel_n1_spi_shutdown(struct spi_device *spi)
+{
+	printk(KERN_INFO "-- start of %s\n", __func__);
+	n1_panel_disable();
+}
+
 
 #if LCD_ONOFF_TEST
 void lcd_power_on(void)
@@ -306,7 +315,7 @@ static ssize_t lcd_power_file_cmd_store(struct device *dev,
 
 static DEVICE_ATTR(lcd_onoff, 0666, lcd_power_file_cmd_show, lcd_power_file_cmd_store);
 
-#endif //LCD_ONOFF_TEST
+#endif /* LCD_ONOFF_TEST */
 
 #if LCD_TYPE
 static ssize_t lcdtype_show(struct device *dev, struct device_attribute *attr, char *buf)
@@ -318,7 +327,7 @@ static ssize_t lcdtype_show(struct device *dev, struct device_attribute *attr, c
 	return strlen(buf);
 }
 static DEVICE_ATTR(lcdtype, 0666,lcdtype_show, NULL);
-#endif // LCD_TYPE
+#endif /* LCD_TYPE */
 
 
 static int panel_n1_spi_probe(struct spi_device *spi)
@@ -357,14 +366,14 @@ static int panel_n1_spi_probe(struct spi_device *spi)
 		printk("Failed to create device file!(%s)!\n", dev_attr_lcd_onoff.attr.name);
 		ret = -1;
 	}
-#endif
+#endif /* LCD_ONOFF_TEST */
 
 #if LCD_TYPE
 	if (device_create_file(tune_lcd_dev, &dev_attr_lcdtype) < 0) {
 		printk("Failed to create device file!(%s)!\n", dev_attr_lcdtype.attr.name);
 		ret = -1;
 	}
-#endif //LCD_TYPE
+#endif /* LCD_TYPE */
 	printk(KERN_INFO "%s: device_create_file(tune_lcd_dev, &dev_attr_lcdtype) \n", __func__);
 
 	reg_lcd_1v8 = regulator_get(NULL, "VLCD_1V8");

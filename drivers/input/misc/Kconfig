@@ -566,9 +566,12 @@ config INPUT_CAPELLA_CM3217
 	  Say Y here to enable the CM3217 Ambient Light Sensor.
 
 config INPUT_HALL
-    bool "HALL IC"
+    tristate "HALL IC"
+    default n
     help
-      Say Y here if you want HALL Slider IC to be confiured for device
+      Say Y here if you want HALL Slider IC to be configured for device
 
-      If unsure, say Y.
+      EXPERIMENTAL code not finished
+
+      If unsure, say N.
 endif

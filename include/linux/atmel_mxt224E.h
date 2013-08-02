@@ -24,33 +24,33 @@
 #define MXT_TUNNING_ENABLE  /* for TS tunning using console  */
 #endif
 
-/*For Factory*/
+/* For Factory */
 #define MXT_FACTORY_TEST  /*for TS factory test */
 #define ENABLE_NOISE_TEST_MODE	0
 
-/*For Performance*/
+/* For Performance */
 #define MXT_DRIVER_FILTER
 #define MXT_THREADED_IRQ
 
-/*Normal Feature*/
+/* Normal Features */
 #define MXT_SLEEP_POWEROFF
 #define MXT_ESD_WORKAROUND
 #define KEY_LED_CONTROL
 
-/* TSP Key Feature*/
-#define NUMOFKEYS       2
-#define NUMOF4KEYS       4
-#define KEY_PRESS       1
-#define KEY_RELEASE     0
+/* TSP Key Features */
+#define NUMOFKEYS	2
+#define NUMOF4KEYS	4
+#define KEY_PRESS	1
+#define KEY_RELEASE	0
 
 /* 2 Touch key array */
-#define 	TOUCH_KEY_NULL		0x00
+#define TOUCH_KEY_NULL	0x00
 #define	TOUCH_2KEY_MENU	0x01
-#define	TOUCH_2KEY_BACK		0x02
+#define	TOUCH_2KEY_BACK	0x02
 
 /* 4 Touch key array */
-#define	TOUCH_4KEY_MENU	0x01
-#define	TOUCH_4KEY_HOME	0x02
+#define	TOUCH_4KEY_MENU		0x01
+#define	TOUCH_4KEY_HOME		0x02
 #define	TOUCH_4KEY_BACK		0x03
 #define	TOUCH_4KEY_SEARCH	0x04
 
@@ -103,14 +103,14 @@
 #define MXT_SPT_CTECONFIG_T46                           46u  /* added MXT224E */
 #define MXT_PROCI_STYLUS_T47                            47u  /* added MXT224E */
 #define MXT_PROCG_NOISESUPPRESSION_T48                  48u  /* added MXT224E */
-#define MXT_GEN_INFOBLOCK16BIT_T254                     254u  /*added MXT224E */
-#define	MXT_MAX_OBJECT_TYPES				50u	/* temporary */
+#define MXT_GEN_INFOBLOCK16BIT_T254                     254u /*added MXT224E */
+#define	MXT_MAX_OBJECT_TYPES				50u  /* temporary */
 
 
 #define MXT_END_OF_MESSAGES                             255u
 
 /* Configuration Object Adress Fields */
-/* GEN_MESSAGEPROCESSOR_T5  Address Definitions         */
+/* GEN_MESSAGEPROCESSOR_T5  Address Definitions */
 /* T5 does not have any configuration */
 
 /* GEN_COMMANDPROCESSOR_T6  Address Definitions         */
@@ -461,12 +461,12 @@
 #define MXT_MSG_REPORTID                                0x00
 
 
-/* MXT_GEN_MESSAGEPROCESSOR_T5 Message address definitions              */
+/* MXT_GEN_MESSAGEPROCESSOR_T5 Message address definitions */
 #define MXT_MSG_T5_REPORTID                             0x00
 #define MXT_MSG_T5_MESSAGE                              0x01
 #define MXT_MSG_T5_CHECKSUM                             0x08
 
-/* MXT_GEN_COMMANDPROCESSOR_T6 Message address definitions              */
+/* MXT_GEN_COMMANDPROCESSOR_T6 Message address definitions */
 #define MXT_MSG_T6_STATUS_NORMAL                        0x00
 #define MXT_MSG_T6_STATUS                               0x01
 #define MXT_MSGB_T6_COMSERR                             0x04
@@ -478,9 +478,9 @@
 /* Three bytes */
 #define MXT_MSG_T6_CHECKSUM                             0x02
 
-/* MXT_GEN_POWERCONFIG_T7 NO Message address definitions                */
-/* MXT_GEN_ACQUIRECONFIG_T8 Message address definitions                 */
-/* MXT_TOUCH_MULTITOUCHSCREEN_T9 Message address definitions            */
+/* MXT_GEN_POWERCONFIG_T7 NO Message address definitions */
+/* MXT_GEN_ACQUIRECONFIG_T8 Message address definitions */
+/* MXT_TOUCH_MULTITOUCHSCREEN_T9 Message address definitions */
 
 #define MXT_MSG_T9_STATUS                               0x01
 /* Status bit field */
@@ -499,26 +499,26 @@
 #define MXT_MSG_T9_TCHAMPLITUDE                         0x06
 #define MXT_MSG_T9_TCHVECTOR                            0x07
 
-/* MXT_TOUCH_KEYARRAY_T15 Message address definitions                   */
+/* MXT_TOUCH_KEYARRAY_T15 Message address definitions */
 #define MXT_MSG_T15_STATUS                              0x01
 #define MXT_MSGB_T15_DETECT                             0x80
 /* 4 bytes */
 #define MXT_MSG_T15_KEYSTATE                            0x02
 
-/* MXT_SPT_GPIOPWM_T19 Message address definitions                      */
+/* MXT_SPT_GPIOPWM_T19 Message address definitions */
 #define MXT_MSG_T19_STATUS                              0x01
 
-/* MXT_PROCI_GRIPFACESUPPRESSION_T20 Message address definitions        */
+/* MXT_PROCI_GRIPFACESUPPRESSION_T20 Message address definitions */
 #define MXT_MSG_T20_STATUS                              0x01
 #define MXT_MSGB_T20_FACE_SUPPRESS                      0x01
-/* MXT_PROCG_NOISESUPPRESSION_T22 Message address definitions           */
+/* MXT_PROCG_NOISESUPPRESSION_T22 Message address definitions */
 #define MXT_MSG_T22_STATUS                              0x01
 #define MXT_MSGB_T22_FHCHG                              0x01
 #define MXT_MSGB_T22_GCAFERR                            0x04
 #define MXT_MSGB_T22_FHERR                              0x08
 #define MXT_MSG_T22_GCAFDEPTH                           0x02
 
-/* MXT_TOUCH_PROXIMITY_T23 Message address definitions                  */
+/* MXT_TOUCH_PROXIMITY_T23 Message address definitions */
 #define MXT_MSG_T23_STATUS                              0x01
 #define MXT_MSGB_T23_FALL                               0x20
 #define MXT_MSGB_T23_RISE                               0x40
@@ -526,7 +526,7 @@
 /* 16 bit */
 #define MXT_MSG_T23_PROXDELTA                           0x02
 
-/* MXT_PROCI_ONETOUCHGESTUREPROCESSOR_T24 Message address definitions   */
+/* MXT_PROCI_ONETOUCHGESTUREPROCESSOR_T24 Message address definitions */
 #define MXT_MSG_T24_STATUS                              0x01
 #define MXT_MSG_T24_XPOSMSB                             0x02
 #define MXT_MSG_T24_YPOSMSB                             0x03
@@ -535,7 +535,7 @@
 /* 16 bit */
 #define MXT_MSG_T24_DIST                                0x06
 
-/* MXT_SPT_SELFTEST_T25 Message address definitions                     */
+/* MXT_SPT_SELFTEST_T25 Message address definitions */
 #define MXT_MSG_T25_STATUS                              0x01
 /* 5 Bytes */
 #define MXT_MSGR_T25_OK                                 0xFE
@@ -545,7 +545,7 @@
 #define MXT_MSGR_T25_GAIN_ERROR                         0x20
 #define MXT_MSG_T25_INFO                                0x02
 
-/* MXT_PROCI_TWOTOUCHGESTUREPROCESSOR_T27 Message address definitions   */
+/* MXT_PROCI_TWOTOUCHGESTUREPROCESSOR_T27 Message address definitions */
 #define MXT_MSG_T27_STATUS                              0x01
 #define MXT_MSGB_T27_ROTATEDIR                          0x10
 #define MXT_MSGB_T27_PINCH                              0x20
@@ -559,23 +559,19 @@
 /* 16 bit */
 #define MXT_MSG_T27_SEPARATION                          0x06
 
-/* MXT_SPT_CTECONFIG_T28 Message address definitions                    */
+/* MXT_SPT_CTECONFIG_T28 Message address definitions */
 #define MXT_MSG_T28_STATUS                              0x01
 #define MXT_MSGB_T28_CHKERR                             0x01
-
 
 /* MXT_PROCI_TOUCHSUPPRESSION_T42 Message address fifinitions */
 #define MXT_MSG_T42_STATUS                               0x01
 #define MXT_MSGB_T42_TCHSUP				 0x01
 
-
 /* MXT_SPT_CTECONFIG_T46 Message address fifinitions */
 #define MXT_MSG_T46_STATUS                               0x01
 #define MXT_MSGB_T46_CHKERR                              0x01
 
-
-
-/* MXT_DEBUG_DIAGNOSTICS_T37 NO Message address definitions             */
+/* MXT_DEBUG_DIAGNOSTICS_T37 NO Message address definitions */
 
 /* One Touch Events */
 #define MT_GESTURE_RESERVED                             0x00
@@ -606,11 +602,9 @@
 
 #define MXT_MAX_FRAME_SIZE                              532
 
-
 #define MXT_ADR_T38_CFG_CTRL 				0x00
 #define MXT_CFG_OVERWRITE				0x00
 #define MXT_CFG_DEBUG					0xA5
-
 
 /* Firmware */
 #define MXT224E_FIRMWARE "mxt224e.fw"
@@ -674,39 +668,39 @@ struct mxt_callbacks {
 
 struct mxt_platform_data {
 	const char *platform_name;
-	u8    numtouch; /* Number of touches to report  */
-	void  (*init_platform_hw)(void *);
-	void  (*exit_platform_hw)(void *);
-	void  (*suspend_platform_hw)(void *);
-	void  (*resume_platform_hw)(void *);
+	u8	numtouch;	/* Number of touches to report  */
+	void	(*init_platform_hw)(void *);
+	void	(*exit_platform_hw)(void *);
+	void	(*suspend_platform_hw)(void *);
+	void	(*resume_platform_hw)(void *);
 
 	u32	key_led_en1;
 	u32	key_led_en2;
 	u32	key_led_en3;
 	u32	key_led_en4;
 
-	int   max_x;    /* The default reported X range   */
-	int   max_y;    /* The default reported Y range   */
-	u8    (*valid_interrupt) (void);
+	int	max_x;	/* The default reported X range   */
+	int	max_y;	/* The default reported Y range   */
+	u8	(*valid_interrupt) (void);
 	void	(*register_cb)(struct mxt_callbacks *);
 
 	const char *reg_vdd_name;
 	const char *reg_avdd_name;
 	const char *reg_vdd_lvsio_name;
 
-	struct regulator *reg_vdd;  /* TSP_VDD_1V8 */
-	struct regulator *reg_avdd;  /* TSP_AVDD_3V3 */
+	struct regulator *reg_vdd;		/* TSP_VDD_1V8 */
+	struct regulator *reg_avdd;		/* TSP_AVDD_3V3 */
 	struct regulator *reg_vdd_lvsio;	/* TSP_VDD_LVSIO_2V8 (for level shifter) */
 
-	int	reg_vdd_level;	/* uV range */
-	int	reg_avdd_level;	/* uV range */
+	int	reg_vdd_level;		/* uV range */
+	int	reg_avdd_level;		/* uV range */
 	int	reg_vdd_lvsio_level;	/* uV range */
 
 	enum tegra_pingroup i2c_pingroup;
 	enum tegra_pullupdown i2c_suspend_pupd;
 	enum tegra_pullupdown i2c_resume_pupd;
 	u32	irq_gpio;
-	u32 board_rev;	/* for set revision check */
+	u32	board_rev;	/* for set revision check */
 };
 
 /* Driver datastructure */
@@ -763,9 +757,6 @@ struct mxt_data {
 	u16                  msg_proc_addr;
 	u8                   message_size;
 
-
-	/* u8 debug_config[32]; */
-
 	/* Pointers to diagnostic objects, not allocated, unless needed */
 	s16                  *delta;
 	u16                  *reference;
@@ -782,6 +773,10 @@ struct mxt_data {
 	u8 check_auto_cal;
 	u16			set_mode_for_ta;
 	u16			mxt_status;
+
+	u16			keyled;
+	bool			keyled_sleep;
+
 	struct mxt_callbacks callbacks;
 };
 
@@ -867,24 +862,17 @@ u16 get_object_size(uint8_t object_type,
 int backup_to_nv(struct mxt_data *mxt);
 int reset_chip(struct mxt_data *mxt, u8 mode);
 
-#if     1
 /* Should be implemented in board support */
 u8 mxt_valid_interrupt(void);
-#else
-#define mxt_valid_interrupt()    1
-#endif
 
-
-void    mxt_hw_reset(void);
+void mxt_hw_reset(void);
 
 #ifdef KEY_LED_CONTROL
 #define MENU_LED_2KEY		0xFE
-#define BACK_LED_2KEY			0xFD
+#define BACK_LED_2KEY		0xFD
 
 #define MENU_LED_4KEY		0xFE
 #define HOME_LED_4KEY		0xFD
-#define BACK_LED_4KEY			0xFB
+#define BACK_LED_4KEY		0xFB
 #define SEARCH_LED_4KEY		0xF7
-
-static void key_led_on(struct mxt_data *mxt, u32 val);
 #endif

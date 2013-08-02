@@ -408,7 +408,7 @@ static int tegra_dc_ext_flip(struct tegra_dc_ext_user *user,
 {
 	struct tegra_dc_ext *ext = user->ext;
 	struct tegra_dc_ext_flip_data *data;
-	int work_index;
+	int work_index = 0;
 	int i, ret = 0;
 
 #ifdef CONFIG_ANDROID

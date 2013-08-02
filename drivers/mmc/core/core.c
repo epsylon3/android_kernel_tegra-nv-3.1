@@ -11,6 +11,7 @@
  * it under the terms of the GNU General Public License version 2 as
  * published by the Free Software Foundation.
  */
+
 #include <linux/module.h>
 #include <linux/init.h>
 #include <linux/interrupt.h>
@@ -1572,6 +1573,7 @@ static unsigned int mmc_erase_timeout(struct mmc_card *card,
 		return mmc_mmc_erase_timeout(card, arg, qty);
 }
 
+#if 0
 static int mmc_do_erase(struct mmc_card *card, unsigned int from,
 			unsigned int to, unsigned int arg)
 {
@@ -1672,6 +1674,7 @@ static int mmc_do_erase(struct mmc_card *card, unsigned int from,
 out:
 	return err;
 }
+#endif
 
 /**
  * mmc_erase - erase sectors.
@@ -1685,6 +1688,7 @@ out:
 int mmc_erase(struct mmc_card *card, unsigned int from, unsigned int nr,
 	      unsigned int arg)
 {
+#if 0
 	unsigned int rem, to = from + nr;
 
 	if (!(card->host->caps & MMC_CAP_ERASE) ||
@@ -1737,14 +1741,18 @@ int mmc_erase(struct mmc_card *card, unsigned int from, unsigned int nr,
 	to -= 1;
 
 	return mmc_do_erase(card, from, to, arg);
+#endif
+	return -EOPNOTSUPP;
 }
 EXPORT_SYMBOL(mmc_erase);
 
 int mmc_can_erase(struct mmc_card *card)
 {
+#if 0
 	if ((card->host->caps & MMC_CAP_ERASE) &&
 	    (card->csd.cmdclass & CCC_ERASE) && card->erase_size)
 		return 1;
+#endif
 	return 0;
 }
 EXPORT_SYMBOL(mmc_can_erase);
@@ -2143,6 +2151,7 @@ int mmc_suspend_host(struct mmc_host *host)
 			host->pm_flags = 0;
 			err = 0;
 		}
+		flush_delayed_work(&host->disable);
 	}
 	mmc_bus_put(host);
 

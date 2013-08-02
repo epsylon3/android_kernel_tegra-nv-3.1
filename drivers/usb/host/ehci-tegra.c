@@ -27,21 +27,21 @@
 #define TEGRA_USB_PORTSC_PHCD		(1 << 23)
 
 #define TEGRA_USB_SUSP_CTRL_OFFSET	0x400
-#define TEGRA_USB_SUSP_CLR			(1 << 5)
-#define TEGRA_USB_PHY_CLK_VALID			(1 << 7)
-#define TEGRA_USB_SRT				(1 << 25)
-#define TEGRA_USB_PHY_CLK_VALID_INT_ENB		(1 << 9)
-#define TEGRA_USB_PHY_CLK_VALID_INT_STS		(1 << 8)
+#define TEGRA_USB_SUSP_CLR		(1 << 5)
+#define TEGRA_USB_PHY_CLK_VALID		(1 << 7)
+#define TEGRA_USB_SRT			(1 << 25)
+#define TEGRA_USB_PHY_CLK_VALID_INT_ENB	(1 << 9)
+#define TEGRA_USB_PHY_CLK_VALID_INT_STS	(1 << 8)
 
 #ifdef CONFIG_ARCH_TEGRA_2x_SOC
 #define TEGRA_USB_PORTSC1_OFFSET	0x184
 #else
 #define TEGRA_USB_PORTSC1_OFFSET	0x174
 #endif
-#define TEGRA_USB_PORTSC1_WKCN			(1 << 20)
+#define TEGRA_USB_PORTSC1_WKCN		(1 << 20)
 
 #define TEGRA_LVL2_CLK_GATE_OVRB	0xfc
-#define TEGRA_USB2_CLK_OVR_ON			(1 << 10)
+#define TEGRA_USB2_CLK_OVR_ON		(1 << 10)
 
 #define TEGRA_USB_DMA_ALIGN 32
 
@@ -52,9 +52,9 @@
 #define HOSTPC1_DEVLC_STS 		(1 << 28)
 #define HOSTPC1_DEVLC_PTS(x)		(((x) & 0x7) << 29)
 
-#define USB1_PREFETCH_ID               6
-#define USB2_PREFETCH_ID               18
-#define USB3_PREFETCH_ID               17
+#define USB1_PREFETCH_ID		6
+#define USB2_PREFETCH_ID		18
+#define USB3_PREFETCH_ID		17
 
 struct tegra_ehci_hcd {
 	struct ehci_hcd *ehci;
@@ -1105,6 +1105,7 @@ void clk_timer_callback(unsigned long data)
 	}
 }
 
+#ifndef CONFIG_MACH_N1
 static void clk_timer_work_handler(struct work_struct* clk_timer_work) {
 	struct tegra_ehci_hcd *tegra = container_of(clk_timer_work,
 						struct tegra_ehci_hcd,
@@ -1145,6 +1146,7 @@ static void clk_timer_work_handler(struct work_struct* clk_timer_work) {
 		}
 	}
 }
+#endif
 
 static int tegra_ehci_urb_enqueue (
 	struct usb_hcd	*hcd,
@@ -1306,8 +1308,8 @@ static int tegra_ehci_probe(struct platform_device *pdev)
 	int err = 0;
 	int irq;
 	int instance = pdev->id;
-	char *usb_name;
-	char *usb_min_name;
+	char *usb_name = NULL;
+	char *usb_min_name = NULL;
 
 	pdata = pdev->dev.platform_data;
 	if (!pdata) {

@@ -18,27 +18,25 @@
 // MAGIC_CODE in LOKE
 // you have to use this vitrual address with consideration
 //#define LOKE_BOOT_USB_DWNLD_V_ADDR  0xC1000000
-#define LOKE_BOOT_USB_DWNLD_V_ADDR	(0xE0000000 - 4)		/* Magic number physic start address 0x18BFFFFC */
-#define LOKE_BOOT_USB_DWNLD_P_ADDR	(0x20000000 - 4)		/* Magic number physic start address 0x18BFFFFC */
+#define LOKE_BOOT_USB_DWNLD_V_ADDR	(0xE0000000 - 4)	/* Magic number physic start address 0x18BFFFFC */
+#define LOKE_BOOT_USB_DWNLD_P_ADDR	(0x20000000 - 4)	/* Magic number physic start address 0x18BFFFFC */
 #define LOKE_BOOT_USB_DWNLDMAGIC_NO	0x66262564
-#define KERNEL_SEC_UPLOAD_CAUSE_V_ADDR	(0xE0000000 - 8)  /* Magic code virtual addr for upload cause */
-#define KERNEL_SEC_UPLOAD_CAUSE_P_ADDR	(0x20000000 - 8)  /* Magic code physical addr for upload cause */
+#define KERNEL_SEC_UPLOAD_CAUSE_V_ADDR	(0xE0000000 - 8)	/* Magic code virtual addr for upload cause */
+#define KERNEL_SEC_UPLOAD_CAUSE_P_ADDR	(0x20000000 - 8)	/* Magic code physical addr for upload cause */
 
+#define KERNEL_SEC_DUMP_AP_DEAD_INDICATOR	0xABCD00C9	// AP -> CP : AP Crash Ind
+#define KERNEL_SEC_DUMP_AP_DEAD_ACK      	0xCACAEDED	// CP -> AP : CP ready for uplaod mode.
 
-
-#define KERNEL_SEC_DUMP_AP_DEAD_INDICATOR      0xABCD00C9    // AP -> CP : AP Crash Ind
-#define KERNEL_SEC_DUMP_AP_DEAD_ACK      0xCACAEDED   // CP -> AP : CP ready for uplaod mode.
-
-#define KERNEL_SEC_DEBUG_CAUSE_STR_LEN   65 //it's longer than DPRAM_ERR_MSG_LEN, in dpram.h
+#define KERNEL_SEC_DEBUG_CAUSE_STR_LEN	65	//it's longer than DPRAM_ERR_MSG_LEN, in dpram.h
 #define KERNEL_SEC_DEBUG_LEVEL_LOW	(0x574F4C44)
 #define KERNEL_SEC_DEBUG_LEVEL_MID	(0x44494D44)
 #define KERNEL_SEC_DEBUG_LEVEL_HIGH	(0x47494844)
 
 //WDOG register
-#define S3C_PA_WDT                  0xE2700000
+#define S3C_PA_WDT	0xE2700000
 
 // klaatu - schedule log
-#define SCHED_LOG_MAX 2000
+#define SCHED_LOG_MAX	2000
 
 typedef struct {
     void * dummy;
@@ -150,9 +148,9 @@ typedef enum
 	UPLOAD_CAUSE_FORCED_UPLOAD  = 0x00000022,
 	UPLOAD_CAUSE_CP_ERROR_FATAL = 0x000000CC,
     UPLOAD_CAUSE_USER_FAULT 	= 0x0000002F,
-}kernel_sec_upload_cause_type;
+} kernel_sec_upload_cause_type;
 
-#ifdef CONFIG_TARGET_LOCALE_KOR// klaatu
+#ifdef CONFIG_TARGET_LOCALE_KOR // klaatu
 #ifdef CONFIG_KERNEL_DEBUG_SEC
 typedef struct {
 	char Magic[4];
@@ -163,17 +161,17 @@ typedef struct {
 	void *Excp_reserve2;
 	void *Excp_reserve3;
 	void *Excp_reserve4;
-}gExcpDebugInfo_t;
+} gExcpDebugInfo_t;
 
 #endif /* CONFIG_KERNEL_DEBUG_SEC */
 #endif /* CONFIG_TARGET_LOCALE_KOR */
 
-#define KERNEL_SEC_UPLOAD_CAUSE_MASK     0x000000FF
-#define KERNEL_SEC_UPLOAD_AUTOTEST_BIT   31
-#define KERNEL_SEC_UPLOAD_AUTOTEST_MASK  (1<<KERNEL_SEC_UPLOAD_AUTOTEST_BIT)
+#define KERNEL_SEC_UPLOAD_CAUSE_MASK	0x000000FF
+#define KERNEL_SEC_UPLOAD_AUTOTEST_BIT	31
+#define KERNEL_SEC_UPLOAD_AUTOTEST_MASK	(1<<KERNEL_SEC_UPLOAD_AUTOTEST_BIT)
 
-#define KERNEL_SEC_DEBUG_LEVEL_BIT   29
-#define KERNEL_SEC_DEBUG_LEVEL_MASK  (3<<KERNEL_SEC_DEBUG_LEVEL_BIT)
+#define KERNEL_SEC_DEBUG_LEVEL_BIT	29
+#define KERNEL_SEC_DEBUG_LEVEL_MASK	(3<<KERNEL_SEC_DEBUG_LEVEL_BIT)
 
 struct kernel_sec_port_path {
 	unsigned char uart_path;
@@ -262,7 +260,6 @@ extern bool kernel_sec_set_path(kernel_sec_port_type port_type, kernel_sec_path_
 
 extern void dump_all_task_info(void);
 extern void dump_cpu_stat(void);
-
 
 #define KERNEL_SEC_LEN_BUILD_TIME 16
 #define KERNEL_SEC_LEN_BUILD_DATE 16

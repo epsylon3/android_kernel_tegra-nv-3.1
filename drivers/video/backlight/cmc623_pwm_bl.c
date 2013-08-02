@@ -24,36 +24,32 @@
 #include <mach/hardware.h>
 #include <mach/gpio.h>
 
-
-
 #define CMC623_PWM_MAX_INTENSITY		255
-#define CMC623_PWM_DEFAULT_INTENSITY	114
+#define CMC623_PWM_DEFAULT_INTENSITY		114
 #define CMC623_PWM_DEFAULT_INTENSITY_AFTER_HW12	76
-#define MAX_LEVEL			1600
-
+#define MAX_LEVEL				1600
 
 // brightness tuning
 #define MAX_BRIGHTNESS_LEVEL_AFTER_HW12 255
 #define MID_BRIGHTNESS_LEVEL_AFTER_HW12 88//92
-#define LOW_BRIGHTNESS_LEVEL_AFTER_HW12 8
+#define LOW_BRIGHTNESS_LEVEL_AFTER_HW12 10
 #define DIM_BRIGHTNESS_LEVEL_AFTER_HW12 8
 
 #define MAX_BACKLIGHT_VALUE_AFTER_HW12 1600
 #define MID_BACKLIGHT_VALUE_AFTER_HW12 560//576
-#define LOW_BACKLIGHT_VALUE_AFTER_HW12 48
+#define LOW_BACKLIGHT_VALUE_AFTER_HW12 50
 #define DIM_BACKLIGHT_VALUE_AFTER_HW12 48
 
 // brightness tuning
 #define MAX_BRIGHTNESS_LEVEL 255
 #define MID_BRIGHTNESS_LEVEL 114
-#define LOW_BRIGHTNESS_LEVEL 10
+#define LOW_BRIGHTNESS_LEVEL 12
 #define DIM_BRIGHTNESS_LEVEL 10
 
 #define MAX_BACKLIGHT_VALUE 1600
 #define MID_BACKLIGHT_VALUE 720
-#define LOW_BACKLIGHT_VALUE 64
+#define LOW_BACKLIGHT_VALUE 66
 #define DIM_BACKLIGHT_VALUE 64
-
 
 
 extern void cmc623_pwm_apply(int value);
@@ -89,12 +85,21 @@ static void cmc623_pwm_backlight_ctl(struct platform_device *pdev, int intensity
 
 	if (system_rev >= 12)
 	{
-		if (intensity >= MID_BRIGHTNESS_LEVEL_AFTER_HW12)
-			tune_level = (intensity - MID_BRIGHTNESS_LEVEL_AFTER_HW12) * (MAX_BACKLIGHT_VALUE_AFTER_HW12-MID_BACKLIGHT_VALUE_AFTER_HW12) / (MAX_BRIGHTNESS_LEVEL_AFTER_HW12-MID_BRIGHTNESS_LEVEL_AFTER_HW12) + MID_BACKLIGHT_VALUE_AFTER_HW12;
-		else if (intensity >= LOW_BRIGHTNESS_LEVEL_AFTER_HW12)
-			tune_level = (intensity - LOW_BRIGHTNESS_LEVEL_AFTER_HW12) * (MID_BACKLIGHT_VALUE_AFTER_HW12-LOW_BACKLIGHT_VALUE_AFTER_HW12) / (MID_BRIGHTNESS_LEVEL_AFTER_HW12-LOW_BRIGHTNESS_LEVEL_AFTER_HW12) + LOW_BACKLIGHT_VALUE_AFTER_HW12;
-		else if (intensity >= DIM_BRIGHTNESS_LEVEL_AFTER_HW12)
-			tune_level = (intensity - DIM_BRIGHTNESS_LEVEL_AFTER_HW12) * (LOW_BACKLIGHT_VALUE_AFTER_HW12-DIM_BACKLIGHT_VALUE_AFTER_HW12) / (LOW_BRIGHTNESS_LEVEL_AFTER_HW12-DIM_BRIGHTNESS_LEVEL_AFTER_HW12) + DIM_BACKLIGHT_VALUE_AFTER_HW12;
+		const int max_br = (MAX_BRIGHTNESS_LEVEL_AFTER_HW12 - MID_BRIGHTNESS_LEVEL_AFTER_HW12);
+		const int mid_br = (MID_BRIGHTNESS_LEVEL_AFTER_HW12 - LOW_BRIGHTNESS_LEVEL_AFTER_HW12);
+		const int low_br = (LOW_BRIGHTNESS_LEVEL_AFTER_HW12 - DIM_BRIGHTNESS_LEVEL_AFTER_HW12);
+
+		const int max_bl = (MAX_BACKLIGHT_VALUE_AFTER_HW12 - MID_BACKLIGHT_VALUE_AFTER_HW12);
+		const int mid_bl = (MID_BACKLIGHT_VALUE_AFTER_HW12 - LOW_BACKLIGHT_VALUE_AFTER_HW12);
+		const int min_bl = (LOW_BACKLIGHT_VALUE_AFTER_HW12 - DIM_BACKLIGHT_VALUE_AFTER_HW12);
+
+		if (intensity >= MID_BRIGHTNESS_LEVEL_AFTER_HW12 && max_br)
+			tune_level = (intensity - MID_BRIGHTNESS_LEVEL_AFTER_HW12) * max_bl / max_br + MID_BACKLIGHT_VALUE_AFTER_HW12;
+		else if (intensity >= LOW_BRIGHTNESS_LEVEL_AFTER_HW12 && mid_br)
+			tune_level = (intensity - LOW_BRIGHTNESS_LEVEL_AFTER_HW12) * mid_bl / mid_br + LOW_BACKLIGHT_VALUE_AFTER_HW12;
+		else if (intensity >= DIM_BRIGHTNESS_LEVEL_AFTER_HW12 && low_br)
+			tune_level = (intensity - DIM_BRIGHTNESS_LEVEL_AFTER_HW12) * min_bl / low_br + DIM_BACKLIGHT_VALUE_AFTER_HW12;
+
 		else if (intensity > 0)
 			tune_level = DIM_BACKLIGHT_VALUE_AFTER_HW12;
 		else
@@ -115,7 +120,7 @@ static void cmc623_pwm_backlight_ctl(struct platform_device *pdev, int intensity
 	}
 
 	/*
-	pr_info("--- [cmc backlight control HW rev %d]%d(%d)---\n",system_rev,intensity, tune_level);
+	vpr_info("--- [cmc backlight control] %d(%d) ---\n", intensity, tune_level);
 	*/
 	cmc623_pwm_apply_brightness(pdev, tune_level);
 }
@@ -129,7 +134,7 @@ static void cmc623_pwm_send_intensity(struct backlight_device *bd)
 
 	pdev = dev_get_drvdata(&bd->dev);
 	if (pdev == NULL)
-		{
+	{
 		printk(KERN_ERR "%s:failed to get platform device.\n", __func__);
 		return;
 	}
@@ -158,13 +163,13 @@ static void cmc623_pwm_send_intensity(struct backlight_device *bd)
 	current_intensity = intensity;
 }
 
-static void cmc623_pwm_gpio_init()
+static void cmc623_pwm_gpio_init(void)
 {
 //	s3c_gpio_cfgpin(GPIO_LCD_CABC_PWM_R05, S3C_GPIO_SFN(3));	//mdnie pwm
-//    s3c_gpio_setpull(GPIO_LCD_CABC_PWM_R05, S3C_GPIO_PULL_NONE);
+//	s3c_gpio_setpull(GPIO_LCD_CABC_PWM_R05, S3C_GPIO_PULL_NONE);
 }
 
-#ifdef CONFIG_PM
+#if defined(CONFIG_PM) && !defined(CONFIG_HAS_EARLYSUSPEND)
 static int cmc623_pwm_suspend(struct platform_device *swi_dev, pm_message_t state)
 {
 	struct backlight_device *bd = platform_get_drvdata(swi_dev);
@@ -190,8 +195,8 @@ static int cmc623_pwm_resume(struct platform_device *swi_dev)
 	return 0;
 }
 #else
-#define cmc623_pwm_suspend		NULL
-#define cmc623_pwm_resume		NULL
+#define cmc623_pwm_suspend	NULL
+#define cmc623_pwm_resume	NULL
 #endif
 
 #ifdef CONFIG_HAS_EARLYSUSPEND
@@ -202,7 +207,7 @@ static void cmc623_pwm_early_suspend(struct early_suspend *h)
 	cmc623_pwm_suspended = 1;
 	cmc623_pwm_send_intensity(bd);
 
-	return 0;
+	return;
 }
 
 static void cmc623_pwm_early_resume(struct early_suspend *h)
@@ -210,18 +215,17 @@ static void cmc623_pwm_early_resume(struct early_suspend *h)
 	struct backlight_device *bd = platform_get_drvdata(bl_pdev);
 
 	cmc623_pwm_suspended = 0;
-
 	cmc623_pwm_gpio_init();
-
 	cmc623_pwm_send_intensity(bd);
-	return 0;
+
+	return;
 }
 #endif
 
 static int cmc623_pwm_set_intensity(struct backlight_device *bd)
 {
 	/*
-	pr_info("BD->PROPS.BRIGHTNESS = %d\n", bd->props.brightness);
+	vpr_info("BD->PROPS.BRIGHTNESS = %d\n", bd->props.brightness);
 	*/
 
 	cmc623_pwm_send_intensity(bd);

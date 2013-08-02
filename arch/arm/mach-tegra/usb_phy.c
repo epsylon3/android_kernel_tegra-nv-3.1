@@ -35,355 +35,350 @@
 #include <mach/pinmux.h>
 #include "fuse.h"
 
-
 #ifdef CONFIG_ARCH_TEGRA_2x_SOC
+
 #define USB_USBCMD		0x140
-#define   USB_USBCMD_RS		(1 << 0)
+#define USB_USBCMD_RS		(1 << 0)
 
 #define USB_USBSTS		0x144
-#define   USB_USBSTS_PCI	(1 << 2)
-#define   USB_USBSTS_HCH	(1 << 12)
-
-#define USB_TXFILLTUNING        0x154
-#define USB_FIFO_TXFILL_THRES(x)   (((x) & 0x1f) << 16)
-#define USB_FIFO_TXFILL_MASK    0x1f0000
+#define USB_USBSTS_PCI		(1 << 2)
+#define USB_USBSTS_HCH		(1 << 12)
 
 #define USB_TXFILLTUNING        0x164
 #define USB_FIFO_TXFILL_THRES(x)   (((x) & 0x1f) << 16)
 #define USB_FIFO_TXFILL_MASK    0x1f0000
 
 #define ULPI_VIEWPORT		0x170
-#define   ULPI_WAKEUP		(1 << 31)
-#define   ULPI_RUN		(1 << 30)
-#define   ULPI_RD_WR		(1 << 29)
+#define ULPI_WAKEUP		(1 << 31)
+#define ULPI_RUN		(1 << 30)
+#define ULPI_RD_WR		(1 << 29)
 
 #define USB_PORTSC1		0x184
-#define   USB_PORTSC1_PTS(x)	(((x) & 0x3) << 30)
-#define   USB_PORTSC1_PSPD(x)	(((x) & 0x3) << 26)
-#define   USB_PORTSC1_PHCD	(1 << 23)
-#define   USB_PORTSC1_WKOC	(1 << 22)
-#define   USB_PORTSC1_WKDS	(1 << 21)
-#define   USB_PORTSC1_WKCN	(1 << 20)
-#define   USB_PORTSC1_PTC(x)	(((x) & 0xf) << 16)
-#define   USB_PORTSC1_PP	(1 << 12)
-#define   USB_PORTSC1_LS(x)	(((x) & 0x3) << 10)
-#define   USB_PORTSC1_SUSP	(1 << 7)
-#define   USB_PORTSC1_PE	(1 << 2)
-#define   USB_PORTSC1_CCS	(1 << 0)
+#define USB_PORTSC1_PTS(x)	(((x) & 0x3) << 30)
+#define USB_PORTSC1_PSPD(x)	(((x) & 0x3) << 26)
+#define USB_PORTSC1_PHCD	(1 << 23)
+#define USB_PORTSC1_WKOC	(1 << 22)
+#define USB_PORTSC1_WKDS	(1 << 21)
+#define USB_PORTSC1_WKCN	(1 << 20)
+#define USB_PORTSC1_PTC(x)	(((x) & 0xf) << 16)
+#define USB_PORTSC1_PP		(1 << 12)
+#define USB_PORTSC1_LS(x)	(((x) & 0x3) << 10)
+#define USB_PORTSC1_SUSP	(1 << 7)
+#define USB_PORTSC1_PE		(1 << 2)
+#define USB_PORTSC1_CCS		(1 << 0)
 
-#define USB_SUSP_CTRL		0x400
-#define   USB_WAKE_ON_CNNT_EN_DEV	(1 << 3)
-#define   USB_WAKE_ON_DISCON_EN_DEV	(1 << 4)
-#define   USB_SUSP_CLR		(1 << 5)
-#define   USB_CLKEN             (1 << 6)
-#define   USB_PHY_CLK_VALID	(1 << 7)
-#define   USB_PHY_CLK_VALID_INT_ENB    (1 << 9)
-#define   UTMIP_RESET		(1 << 11)
-#define   UHSIC_RESET		(1 << 11)
-#define   UTMIP_PHY_ENABLE	(1 << 12)
-#define   UHSIC_PHY_ENABLE	(1 << 12)
-#define   ULPI_PHY_ENABLE	(1 << 13)
-#define   USB_SUSP_SET		(1 << 14)
-#define   USB_WAKEUP_DEBOUNCE_COUNT(x)	(((x) & 0x7) << 16)
+#define USB_SUSP_CTRL			0x400
+#define USB_WAKE_ON_CNNT_EN_DEV		(1 << 3)
+#define USB_WAKE_ON_DISCON_EN_DEV	(1 << 4)
+#define USB_SUSP_CLR			(1 << 5)
+#define USB_CLKEN			(1 << 6)
+#define USB_PHY_CLK_VALID		(1 << 7)
+#define USB_PHY_CLK_VALID_INT_ENB	(1 << 9)
+#define UTMIP_RESET			(1 << 11)
+#define UHSIC_RESET			(1 << 11)
+#define UTMIP_PHY_ENABLE		(1 << 12)
+#define UHSIC_PHY_ENABLE		(1 << 12)
+#define ULPI_PHY_ENABLE			(1 << 13)
+#define USB_SUSP_SET			(1 << 14)
+#define USB_WAKEUP_DEBOUNCE_COUNT(x)	(((x) & 0x7) << 16)
 
 #define USB_PHY_VBUS_WAKEUP_ID	0x408
-#define   VDAT_DET_INT_EN	(1 << 16)
-#define   VDAT_DET_CHG_DET	(1 << 17)
-#define   VDAT_DET_STS		(1 << 18)
+#define VDAT_DET_INT_EN		(1 << 16)
+#define VDAT_DET_CHG_DET	(1 << 17)
+#define VDAT_DET_STS		(1 << 18)
 
-#define USB1_LEGACY_CTRL	0x410
-#define   USB1_NO_LEGACY_MODE			(1 << 0)
-#define   USB1_VBUS_SENSE_CTL_MASK		(3 << 1)
-#define   USB1_VBUS_SENSE_CTL_VBUS_WAKEUP	(0 << 1)
-#define   USB1_VBUS_SENSE_CTL_AB_SESS_VLD_OR_VBUS_WAKEUP \
+#define USB1_LEGACY_CTRL			0x410
+#define USB1_NO_LEGACY_MODE			(1 << 0)
+#define USB1_VBUS_SENSE_CTL_MASK		(3 << 1)
+#define USB1_VBUS_SENSE_CTL_VBUS_WAKEUP		(0 << 1)
+#define USB1_VBUS_SENSE_CTL_AB_SESS_VLD_OR_VBUS_WAKEUP \
 						(1 << 1)
-#define   USB1_VBUS_SENSE_CTL_AB_SESS_VLD	(2 << 1)
-#define   USB1_VBUS_SENSE_CTL_A_SESS_VLD	(3 << 1)
+#define USB1_VBUS_SENSE_CTL_AB_SESS_VLD		(2 << 1)
+#define USB1_VBUS_SENSE_CTL_A_SESS_VLD		(3 << 1)
 
 
-#define UTMIP_PLL_CFG1		0x804
-#define   UTMIP_XTAL_FREQ_COUNT(x)		(((x) & 0xfff) << 0)
-#define   UTMIP_PLLU_ENABLE_DLY_COUNT(x)	(((x) & 0x1f) << 27)
+#define UTMIP_PLL_CFG1			0x804
+#define UTMIP_XTAL_FREQ_COUNT(x)	(((x) & 0xfff) << 0)
+#define UTMIP_PLLU_ENABLE_DLY_COUNT(x)	(((x) & 0x1f) << 27)
 
-#define UTMIP_XCVR_CFG0		0x808
-#define   UTMIP_XCVR_SETUP(x)			(((x) & 0xf) << 0)
-#define   UTMIP_XCVR_LSRSLEW(x)			(((x) & 0x3) << 8)
-#define   UTMIP_XCVR_LSFSLEW(x)			(((x) & 0x3) << 10)
-#define   UTMIP_FORCE_PD_POWERDOWN		(1 << 14)
-#define   UTMIP_FORCE_PD2_POWERDOWN		(1 << 16)
-#define   UTMIP_FORCE_PDZI_POWERDOWN		(1 << 18)
-#define   UTMIP_XCVR_LSBIAS_SEL			(1 << 21)
-#define   UTMIP_XCVR_SETUP_MSB(x)		(((x) & 0x7) << 22)
-#define   UTMIP_XCVR_HSSLEW_MSB(x)		(((x) & 0x7f) << 25)
+#define UTMIP_XCVR_CFG0			0x808
+#define UTMIP_XCVR_SETUP(x)		(((x) & 0xf) << 0)
+#define UTMIP_XCVR_LSRSLEW(x)		(((x) & 0x3) << 8)
+#define UTMIP_XCVR_LSFSLEW(x)		(((x) & 0x3) << 10)
+#define UTMIP_FORCE_PD_POWERDOWN	(1 << 14)
+#define UTMIP_FORCE_PD2_POWERDOWN	(1 << 16)
+#define UTMIP_FORCE_PDZI_POWERDOWN	(1 << 18)
+#define UTMIP_XCVR_LSBIAS_SEL		(1 << 21)
+#define UTMIP_XCVR_SETUP_MSB(x)		(((x) & 0x7) << 22)
+#define UTMIP_XCVR_HSSLEW_MSB(x)	(((x) & 0x7f) << 25)
 
 #define UTMIP_XCVR_MAX_OFFSET		2
 #define UTMIP_XCVR_SETUP_MAX_VALUE	0x7f
 #define UTMIP_XCVR_SETUP_MIN_VALUE	0
-#define XCVR_SETUP_MSB_CALIB(x)	((x) >> 4)
+#define XCVR_SETUP_MSB_CALIB(x)		((x) >> 4)
 
-#define UTMIP_BIAS_CFG0		0x80c
-#define   UTMIP_OTGPD			(1 << 11)
-#define   UTMIP_BIASPD			(1 << 10)
-#define   UTMIP_HSDISCON_LEVEL(x)	(((x) & 0x3) << 2)
-#define   UTMIP_HSDISCON_LEVEL_MSB	(1 << 24)
+#define UTMIP_BIAS_CFG0			0x80c
+#define UTMIP_OTGPD			(1 << 11)
+#define UTMIP_BIASPD			(1 << 10)
+#define UTMIP_HSDISCON_LEVEL(x)		(((x) & 0x3) << 2)
+#define UTMIP_HSDISCON_LEVEL_MSB	(1 << 24)
 
-#define UTMIP_HSRX_CFG0		0x810
-#define   UTMIP_ELASTIC_LIMIT(x)	(((x) & 0x1f) << 10)
-#define   UTMIP_IDLE_WAIT(x)		(((x) & 0x1f) << 15)
+#define UTMIP_HSRX_CFG0			0x810
+#define UTMIP_ELASTIC_LIMIT(x)		(((x) & 0x1f) << 10)
+#define UTMIP_IDLE_WAIT(x)		(((x) & 0x1f) << 15)
 
-#define UTMIP_HSRX_CFG1		0x814
-#define   UTMIP_HS_SYNC_START_DLY(x)	(((x) & 0x1f) << 1)
+#define UTMIP_HSRX_CFG1			0x814
+#define UTMIP_HS_SYNC_START_DLY(x)	(((x) & 0x1f) << 1)
 
-#define UTMIP_TX_CFG0		0x820
-#define   UTMIP_FS_PREABMLE_J		(1 << 19)
-#define   UTMIP_HS_DISCON_DISABLE	(1 << 8)
+#define UTMIP_TX_CFG0			0x820
+#define UTMIP_FS_PREABMLE_J		(1 << 19)
+#define UTMIP_HS_DISCON_DISABLE		(1 << 8)
 
-#define UTMIP_MISC_CFG1		0x828
-#define   UTMIP_PLL_ACTIVE_DLY_COUNT(x)	(((x) & 0x1f) << 18)
-#define   UTMIP_PLLU_STABLE_COUNT(x)	(((x) & 0xfff) << 6)
+#define UTMIP_MISC_CFG1			0x828
+#define UTMIP_PLL_ACTIVE_DLY_COUNT(x)	(((x) & 0x1f) << 18)
+#define UTMIP_PLLU_STABLE_COUNT(x)	(((x) & 0xfff) << 6)
 
-#define UTMIP_DEBOUNCE_CFG0	0x82c
-#define   UTMIP_BIAS_DEBOUNCE_A(x)	(((x) & 0xffff) << 0)
+#define UTMIP_DEBOUNCE_CFG0		0x82c
+#define UTMIP_BIAS_DEBOUNCE_A(x)	(((x) & 0xffff) << 0)
 
-#define UTMIP_BAT_CHRG_CFG0	0x830
-#define   UTMIP_PD_CHRG			(1 << 0)
-#define   UTMIP_ON_SINK_EN		(1 << 2)
-#define   UTMIP_OP_SRC_EN		(1 << 3)
+#define UTMIP_BAT_CHRG_CFG0		0x830
+#define UTMIP_PD_CHRG			(1 << 0)
+#define UTMIP_ON_SINK_EN		(1 << 2)
+#define UTMIP_OP_SRC_EN			(1 << 3)
 
-#define UTMIP_XCVR_CFG1		0x838
-#define   UTMIP_FORCE_PDDISC_POWERDOWN	(1 << 0)
-#define   UTMIP_FORCE_PDCHRP_POWERDOWN	(1 << 2)
-#define   UTMIP_FORCE_PDDR_POWERDOWN	(1 << 4)
-#define   UTMIP_XCVR_TERM_RANGE_ADJ(x)	(((x) & 0xf) << 18)
+#define UTMIP_XCVR_CFG1			0x838
+#define UTMIP_FORCE_PDDISC_POWERDOWN	(1 << 0)
+#define UTMIP_FORCE_PDCHRP_POWERDOWN	(1 << 2)
+#define UTMIP_FORCE_PDDR_POWERDOWN	(1 << 4)
+#define UTMIP_XCVR_TERM_RANGE_ADJ(x)	(((x) & 0xf) << 18)
 
-#define UTMIP_BIAS_CFG1		0x83c
-#define   UTMIP_BIAS_PDTRK_COUNT(x)	(((x) & 0x1f) << 3)
+#define UTMIP_BIAS_CFG1			0x83c
+#define UTMIP_BIAS_PDTRK_COUNT(x)	(((x) & 0x1f) << 3)
 
 #define UHSIC_PLL_CFG1				0x804
-#define   UHSIC_XTAL_FREQ_COUNT(x)		(((x) & 0xfff) << 0)
-#define   UHSIC_PLLU_ENABLE_DLY_COUNT(x)	(((x) & 0x1f) << 14)
+#define UHSIC_XTAL_FREQ_COUNT(x)		(((x) & 0xfff) << 0)
+#define UHSIC_PLLU_ENABLE_DLY_COUNT(x)		(((x) & 0x1f) << 14)
 
 #define UHSIC_HSRX_CFG0				0x808
-#define   UHSIC_ELASTIC_UNDERRUN_LIMIT(x)	(((x) & 0x1f) << 2)
-#define   UHSIC_ELASTIC_OVERRUN_LIMIT(x)	(((x) & 0x1f) << 8)
-#define   UHSIC_IDLE_WAIT(x)			(((x) & 0x1f) << 13)
+#define UHSIC_ELASTIC_UNDERRUN_LIMIT(x)		(((x) & 0x1f) << 2)
+#define UHSIC_ELASTIC_OVERRUN_LIMIT(x)		(((x) & 0x1f) << 8)
+#define UHSIC_IDLE_WAIT(x)			(((x) & 0x1f) << 13)
 
 #define UHSIC_HSRX_CFG1				0x80c
-#define   UHSIC_HS_SYNC_START_DLY(x)		(((x) & 0x1f) << 1)
+#define UHSIC_HS_SYNC_START_DLY(x)		(((x) & 0x1f) << 1)
 
 #define UHSIC_TX_CFG0				0x810
-#define   UHSIC_HS_POSTAMBLE_OUTPUT_ENABLE	(1 << 6)
+#define UHSIC_HS_POSTAMBLE_OUTPUT_ENABLE	(1 << 6)
 
 #define UHSIC_MISC_CFG0				0x814
-#define   UHSIC_SUSPEND_EXIT_ON_EDGE		(1 << 7)
-#define   UHSIC_DETECT_SHORT_CONNECT		(1 << 8)
-#define   UHSIC_FORCE_XCVR_MODE			(1 << 15)
+#define UHSIC_SUSPEND_EXIT_ON_EDGE		(1 << 7)
+#define UHSIC_DETECT_SHORT_CONNECT		(1 << 8)
+#define UHSIC_FORCE_XCVR_MODE			(1 << 15)
 
 #define UHSIC_MISC_CFG1				0X818
-#define   UHSIC_PLLU_STABLE_COUNT(x)		(((x) & 0xfff) << 2)
+#define UHSIC_PLLU_STABLE_COUNT(x)		(((x) & 0xfff) << 2)
 
 #define UHSIC_PADS_CFG0				0x81c
-#define   UHSIC_TX_RTUNEN			0xf000
-#define   UHSIC_TX_RTUNE(x)			(((x) & 0xf) << 12)
+#define UHSIC_TX_RTUNEN				0xf000
+#define UHSIC_TX_RTUNE(x)			(((x) & 0xf) << 12)
 
 #define UHSIC_PADS_CFG1				0x820
-#define   UHSIC_PD_BG				(1 << 2)
-#define   UHSIC_PD_TX				(1 << 3)
-#define   UHSIC_PD_TRK				(1 << 4)
-#define   UHSIC_PD_RX				(1 << 5)
-#define   UHSIC_PD_ZI				(1 << 6)
-#define   UHSIC_RX_SEL				(1 << 7)
-#define   UHSIC_RPD_DATA			(1 << 9)
-#define   UHSIC_RPD_STROBE			(1 << 10)
-#define   UHSIC_RPU_DATA			(1 << 11)
-#define   UHSIC_RPU_STROBE			(1 << 12)
+#define UHSIC_PD_BG				(1 << 2)
+#define UHSIC_PD_TX				(1 << 3)
+#define UHSIC_PD_TRK				(1 << 4)
+#define UHSIC_PD_RX				(1 << 5)
+#define UHSIC_PD_ZI				(1 << 6)
+#define UHSIC_RX_SEL				(1 << 7)
+#define UHSIC_RPD_DATA				(1 << 9)
+#define UHSIC_RPD_STROBE			(1 << 10)
+#define UHSIC_RPU_DATA				(1 << 11)
+#define UHSIC_RPU_STROBE			(1 << 12)
 
 #define UHSIC_STAT_CFG0				0x828
-#define   UHSIC_CONNECT_DETECT			(1 << 0)
+#define UHSIC_CONNECT_DETECT			(1 << 0)
 
-
-#else
+#else /* CONFIG_ARCH_TEGRA_2x_SOC */
 
 #define USB_USBCMD		0x130
-#define   USB_USBCMD_RS		(1 << 0)
+#define USB_USBCMD_RS		(1 << 0)
 
 #define USB_USBSTS		0x134
-#define   USB_USBSTS_PCI	(1 << 2)
-#define   USB_USBSTS_SRI	(1 << 7)
-#define   USB_USBSTS_HCH	(1 << 12)
+#define USB_USBSTS_PCI		(1 << 2)
+#define USB_USBSTS_SRI		(1 << 7)
+#define USB_USBSTS_HCH		(1 << 12)
 
 #define ULPI_VIEWPORT		0x160
 
 #define USB_PORTSC1		0x174
-#define   USB_PORTSC1_WKOC	(1 << 22)
-#define   USB_PORTSC1_WKDS	(1 << 21)
-#define   USB_PORTSC1_WKCN	(1 << 20)
-#define   USB_PORTSC1_PTC(x)	(((x) & 0xf) << 16)
-#define   USB_PORTSC1_PP	(1 << 12)
-#define   USB_PORTSC1_LS(x)	(((x) & 0x3) << 10)
-#define   USB_PORTSC1_SUSP	(1 << 7)
-#define   USB_PORTSC1_RESUME	(1 << 6)
-#define   USB_PORTSC1_PE	(1 << 2)
-#define   USB_PORTSC1_CCS	(1 << 0)
+#define USB_PORTSC1_WKOC	(1 << 22)
+#define USB_PORTSC1_WKDS	(1 << 21)
+#define USB_PORTSC1_WKCN	(1 << 20)
+#define USB_PORTSC1_PTC(x)	(((x) & 0xf) << 16)
+#define USB_PORTSC1_PP		(1 << 12)
+#define USB_PORTSC1_LS(x)	(((x) & 0x3) << 10)
+#define USB_PORTSC1_SUSP	(1 << 7)
+#define USB_PORTSC1_RESUME	(1 << 6)
+#define USB_PORTSC1_PE		(1 << 2)
+#define USB_PORTSC1_CCS		(1 << 0)
 
-#define USB_SUSP_CTRL		0x400
-#define   USB_WAKE_ON_CNNT_EN_DEV	(1 << 3)
-#define   USB_WAKE_ON_DISCON_EN_DEV	(1 << 4)
-#define   USB_SUSP_CLR			(1 << 5)
-#define   USB_PHY_CLK_VALID		(1 << 7)
-#define   USB_PHY_CLK_VALID_INT_ENB    (1 << 9)
+#define USB_SUSP_CTRL			0x400
+#define USB_WAKE_ON_CNNT_EN_DEV		(1 << 3)
+#define USB_WAKE_ON_DISCON_EN_DEV	(1 << 4)
+#define USB_SUSP_CLR			(1 << 5)
+#define USB_PHY_CLK_VALID		(1 << 7)
+#define USB_PHY_CLK_VALID_INT_ENB  	  (1 << 9)
 
 
-#define   UTMIP_RESET			(1 << 11)
-#define   UTMIP_PHY_ENABLE		(1 << 12)
-#define   ULPI_PHY_ENABLE		(1 << 13)
-#define   UHSIC_RESET			(1 << 14)
+#define UTMIP_RESET			(1 << 11)
+#define UTMIP_PHY_ENABLE		(1 << 12)
+#define ULPI_PHY_ENABLE			(1 << 13)
+#define UHSIC_RESET			(1 << 14)
 
-#define   USB_WAKEUP_DEBOUNCE_COUNT(x)	(((x) & 0x7) << 16)
-#define   UHSIC_PHY_ENABLE		(1 << 19)
-#define   ULPIS2S_SLV0_RESET		(1 << 20)
-#define   ULPIS2S_SLV1_RESET		(1 << 21)
-#define   ULPIS2S_LINE_RESET		(1 << 22)
-#define   ULPI_PADS_RESET		(1 << 23)
-#define   ULPI_PADS_CLKEN_RESET		(1 << 24)
+#define USB_WAKEUP_DEBOUNCE_COUNT(x)	(((x) & 0x7) << 16)
+#define UHSIC_PHY_ENABLE		(1 << 19)
+#define ULPIS2S_SLV0_RESET		(1 << 20)
+#define ULPIS2S_SLV1_RESET		(1 << 21)
+#define ULPIS2S_LINE_RESET		(1 << 22)
+#define ULPI_PADS_RESET			(1 << 23)
+#define ULPI_PADS_CLKEN_RESET		(1 << 24)
 
 #define USB_PHY_VBUS_WAKEUP_ID	0x408
-#define   VDAT_DET_INT_EN	(1 << 16)
-#define   VDAT_DET_CHG_DET	(1 << 17)
-#define   VDAT_DET_STS		(1 << 18)
+#define VDAT_DET_INT_EN		(1 << 16)
+#define VDAT_DET_CHG_DET	(1 << 17)
+#define VDAT_DET_STS		(1 << 18)
 
-#define USB1_LEGACY_CTRL	0x410
-#define   USB1_NO_LEGACY_MODE			(1 << 0)
-#define   USB1_VBUS_SENSE_CTL_MASK		(3 << 1)
-#define   USB1_VBUS_SENSE_CTL_VBUS_WAKEUP	(0 << 1)
-#define   USB1_VBUS_SENSE_CTL_AB_SESS_VLD_OR_VBUS_WAKEUP \
+#define USB1_LEGACY_CTRL			0x410
+#define USB1_NO_LEGACY_MODE			(1 << 0)
+#define USB1_VBUS_SENSE_CTL_MASK		(3 << 1)
+#define USB1_VBUS_SENSE_CTL_VBUS_WAKEUP		(0 << 1)
+#define USB1_VBUS_SENSE_CTL_AB_SESS_VLD_OR_VBUS_WAKEUP \
 						(1 << 1)
-#define   USB1_VBUS_SENSE_CTL_AB_SESS_VLD	(2 << 1)
-#define   USB1_VBUS_SENSE_CTL_A_SESS_VLD	(3 << 1)
+#define USB1_VBUS_SENSE_CTL_AB_SESS_VLD		(2 << 1)
+#define USB1_VBUS_SENSE_CTL_A_SESS_VLD		(3 << 1)
 
-#define UTMIP_PLL_CFG1		0x804
-#define   UTMIP_XTAL_FREQ_COUNT(x)		(((x) & 0xfff) << 0)
-#define   UTMIP_PLLU_ENABLE_DLY_COUNT(x)	(((x) & 0x1f) << 27)
+#define UTMIP_PLL_CFG1				0x804
+#define UTMIP_XTAL_FREQ_COUNT(x)		(((x) & 0xfff) << 0)
+#define UTMIP_PLLU_ENABLE_DLY_COUNT(x)		(((x) & 0x1f) << 27)
 
-#define UTMIP_XCVR_CFG0		0x808
-#define   UTMIP_XCVR_SETUP(x)			(((x) & 0xf) << 0)
-#define   UTMIP_XCVR_LSRSLEW(x)			(((x) & 0x3) << 8)
-#define   UTMIP_XCVR_LSFSLEW(x)			(((x) & 0x3) << 10)
-#define   UTMIP_FORCE_PD_POWERDOWN		(1 << 14)
-#define   UTMIP_FORCE_PD2_POWERDOWN		(1 << 16)
-#define   UTMIP_FORCE_PDZI_POWERDOWN		(1 << 18)
-#define   UTMIP_XCVR_LSBIAS_SEL			(1 << 21)
-#define   UTMIP_XCVR_SETUP_MSB(x)		(((x) & 0x7) << 22)
-#define   UTMIP_XCVR_HSSLEW_MSB(x)		(((x) & 0x7f) << 25)
+#define UTMIP_XCVR_CFG0				0x808
+#define UTMIP_XCVR_SETUP(x)			(((x) & 0xf) << 0)
+#define UTMIP_XCVR_LSRSLEW(x)			(((x) & 0x3) << 8)
+#define UTMIP_XCVR_LSFSLEW(x)			(((x) & 0x3) << 10)
+#define UTMIP_FORCE_PD_POWERDOWN		(1 << 14)
+#define UTMIP_FORCE_PD2_POWERDOWN		(1 << 16)
+#define UTMIP_FORCE_PDZI_POWERDOWN		(1 << 18)
+#define UTMIP_XCVR_LSBIAS_SEL			(1 << 21)
+#define UTMIP_XCVR_SETUP_MSB(x)			(((x) & 0x7) << 22)
+#define UTMIP_XCVR_HSSLEW_MSB(x)		(((x) & 0x7f) << 25)
 
 #define UTMIP_XCVR_MAX_OFFSET		2
 #define UTMIP_XCVR_SETUP_MAX_VALUE	0x7f
 #define UTMIP_XCVR_SETUP_MIN_VALUE	0
 #define XCVR_SETUP_MSB_CALIB(x)	((x) >> 4)
 
-#define UTMIP_BIAS_CFG0		0x80c
-#define   UTMIP_OTGPD			(1 << 11)
-#define   UTMIP_BIASPD			(1 << 10)
-#define   UTMIP_HSSQUELCH_LEVEL(x)	(((x) & 0x3) << 0)
-#define   UTMIP_HSDISCON_LEVEL(x)	(((x) & 0x3) << 2)
-#define   UTMIP_HSDISCON_LEVEL_MSB	(1 << 24)
+#define UTMIP_BIAS_CFG0			0x80c
+#define UTMIP_OTGPD			(1 << 11)
+#define UTMIP_BIASPD			(1 << 10)
+#define UTMIP_HSSQUELCH_LEVEL(x)	(((x) & 0x3) << 0)
+#define UTMIP_HSDISCON_LEVEL(x)		(((x) & 0x3) << 2)
+#define UTMIP_HSDISCON_LEVEL_MSB	(1 << 24)
 
-#define UTMIP_HSRX_CFG0		0x810
-#define   UTMIP_ELASTIC_LIMIT(x)	(((x) & 0x1f) << 10)
-#define   UTMIP_IDLE_WAIT(x)		(((x) & 0x1f) << 15)
+#define UTMIP_HSRX_CFG0			0x810
+#define UTMIP_ELASTIC_LIMIT(x)		(((x) & 0x1f) << 10)
+#define UTMIP_IDLE_WAIT(x)		(((x) & 0x1f) << 15)
 
-#define UTMIP_HSRX_CFG1		0x814
-#define   UTMIP_HS_SYNC_START_DLY(x)	(((x) & 0x1f) << 1)
+#define UTMIP_HSRX_CFG1			0x814
+#define UTMIP_HS_SYNC_START_DLY(x)	(((x) & 0x1f) << 1)
 
-#define UTMIP_TX_CFG0		0x820
-#define   UTMIP_FS_PREABMLE_J		(1 << 19)
-#define   UTMIP_HS_DISCON_DISABLE	(1 << 8)
+#define UTMIP_TX_CFG0			0x820
+#define UTMIP_FS_PREABMLE_J		(1 << 19)
+#define UTMIP_HS_DISCON_DISABLE		(1 << 8)
 
-#define UTMIP_MISC_CFG1		0x828
-#define   UTMIP_PLL_ACTIVE_DLY_COUNT(x)	(((x) & 0x1f) << 18)
-#define   UTMIP_PLLU_STABLE_COUNT(x)	(((x) & 0xfff) << 6)
+#define UTMIP_MISC_CFG1			0x828
+#define UTMIP_PLL_ACTIVE_DLY_COUNT(x)	(((x) & 0x1f) << 18)
+#define UTMIP_PLLU_STABLE_COUNT(x)	(((x) & 0xfff) << 6)
 
-#define UTMIP_DEBOUNCE_CFG0	0x82c
-#define   UTMIP_BIAS_DEBOUNCE_A(x)	(((x) & 0xffff) << 0)
+#define UTMIP_DEBOUNCE_CFG0		0x82c
+#define UTMIP_BIAS_DEBOUNCE_A(x)	(((x) & 0xffff) << 0)
 
-#define UTMIP_BAT_CHRG_CFG0	0x830
-#define   UTMIP_PD_CHRG			(1 << 0)
-#define   UTMIP_ON_SINK_EN		(1 << 2)
-#define   UTMIP_OP_SRC_EN		(1 << 3)
+#define UTMIP_BAT_CHRG_CFG0		0x830
+#define UTMIP_PD_CHRG			(1 << 0)
+#define UTMIP_ON_SINK_EN		(1 << 2)
+#define UTMIP_OP_SRC_EN			(1 << 3)
 
-#define UTMIP_XCVR_CFG1		0x838
-#define   UTMIP_FORCE_PDDISC_POWERDOWN	(1 << 0)
-#define   UTMIP_FORCE_PDCHRP_POWERDOWN	(1 << 2)
-#define   UTMIP_FORCE_PDDR_POWERDOWN	(1 << 4)
-#define   UTMIP_XCVR_TERM_RANGE_ADJ(x)	(((x) & 0xf) << 18)
+#define UTMIP_XCVR_CFG1			0x838
+#define UTMIP_FORCE_PDDISC_POWERDOWN	(1 << 0)
+#define UTMIP_FORCE_PDCHRP_POWERDOWN	(1 << 2)
+#define UTMIP_FORCE_PDDR_POWERDOWN	(1 << 4)
+#define UTMIP_XCVR_TERM_RANGE_ADJ(x)	(((x) & 0xf) << 18)
 
-#define UTMIP_BIAS_CFG1		0x83c
-#define   UTMIP_BIAS_PDTRK_COUNT(x)	(((x) & 0x1f) << 3)
-#define   UTMIP_BIAS_PDTRK_POWERDOWN	(1 << 0)
-#define   UTMIP_BIAS_PDTRK_POWERUP	(1 << 1)
+#define UTMIP_BIAS_CFG1			0x83c
+#define UTMIP_BIAS_PDTRK_COUNT(x)	(((x) & 0x1f) << 3)
+#define UTMIP_BIAS_PDTRK_POWERDOWN	(1 << 0)
+#define UTMIP_BIAS_PDTRK_POWERUP	(1 << 1)
 
-#define HOSTPC1_DEVLC		0x1b4
-#define   HOSTPC1_DEVLC_PHCD		(1 << 22)
-#define   HOSTPC1_DEVLC_PTS(x)		(((x) & 0x7) << 29)
-#define   HOSTPC1_DEVLC_PTS_MASK	7
-#define   HOSTPC1_DEVLC_PTS_HSIC	4
-#define   HOSTPC1_DEVLC_STS 		(1 << 28)
-#define   HOSTPC1_DEVLC_PSPD(x)		(((x) & 0x3) << 25)
-#define   HOSTPC1_DEVLC_PSPD_MASK	3
-#define   HOSTPC1_DEVLC_PSPD_HIGH_SPEED	2
+#define HOSTPC1_DEVLC			0x1b4
+#define HOSTPC1_DEVLC_PHCD		(1 << 22)
+#define HOSTPC1_DEVLC_PTS(x)		(((x) & 0x7) << 29)
+#define HOSTPC1_DEVLC_PTS_MASK		7
+#define HOSTPC1_DEVLC_PTS_HSIC		4
+#define HOSTPC1_DEVLC_STS 		(1 << 28)
+#define HOSTPC1_DEVLC_PSPD(x)		(((x) & 0x3) << 25)
+#define HOSTPC1_DEVLC_PSPD_MASK		3
+#define HOSTPC1_DEVLC_PSPD_HIGH_SPEED	2
 
 #define TEGRA_USB_USBMODE_REG_OFFSET	0x1f8
-#define   TEGRA_USB_USBMODE_HOST		(3 << 0)
+#define TEGRA_USB_USBMODE_HOST		(3 << 0)
 
-#define TEGRA_PMC_USB_AO		0xf0
-#define   TEGRA_PMC_USB_AO_VBUS_WAKEUP_PD_P0	(1 << 2)
-#define   TEGRA_PMC_USB_AO_ID_PD_P0		(1 << 3)
-#define   TEGRA_PMC_USB_AO_PD_P2		(0xf << 8)
+#define TEGRA_PMC_USB_AO			0xf0
+#define TEGRA_PMC_USB_AO_VBUS_WAKEUP_PD_P0	(1 << 2)
+#define TEGRA_PMC_USB_AO_ID_PD_P0		(1 << 3)
+#define TEGRA_PMC_USB_AO_PD_P2			(0xf << 8)
 
-#define ICUSB_CTRL		0x15c
+#define ICUSB_CTRL				0x15c
 
 #define UHSIC_PLL_CFG1				0xc04
-#define   UHSIC_XTAL_FREQ_COUNT(x)		(((x) & 0xfff) << 0)
-#define   UHSIC_PLLU_ENABLE_DLY_COUNT(x)	(((x) & 0x1f) << 14)
+#define UHSIC_XTAL_FREQ_COUNT(x)		(((x) & 0xfff) << 0)
+#define UHSIC_PLLU_ENABLE_DLY_COUNT(x)		(((x) & 0x1f) << 14)
 
 #define UHSIC_HSRX_CFG0				0xc08
-#define   UHSIC_ELASTIC_UNDERRUN_LIMIT(x)	(((x) & 0x1f) << 2)
-#define   UHSIC_ELASTIC_OVERRUN_LIMIT(x)	(((x) & 0x1f) << 8)
-#define   UHSIC_IDLE_WAIT(x)			(((x) & 0x1f) << 13)
+#define UHSIC_ELASTIC_UNDERRUN_LIMIT(x)		(((x) & 0x1f) << 2)
+#define UHSIC_ELASTIC_OVERRUN_LIMIT(x)		(((x) & 0x1f) << 8)
+#define UHSIC_IDLE_WAIT(x)			(((x) & 0x1f) << 13)
 
 #define UHSIC_HSRX_CFG1				0xc0c
-#define   UHSIC_HS_SYNC_START_DLY(x)		(((x) & 0x1f) << 1)
+#define UHSIC_HS_SYNC_START_DLY(x)		(((x) & 0x1f) << 1)
 
 #define UHSIC_TX_CFG0				0xc10
-#define   UHSIC_HS_READY_WAIT_FOR_VALID		(1 << 9)
+#define UHSIC_HS_READY_WAIT_FOR_VALID		(1 << 9)
 
 #define UHSIC_MISC_CFG0				0xc14
-#define   UHSIC_SUSPEND_EXIT_ON_EDGE		(1 << 7)
-#define   UHSIC_DETECT_SHORT_CONNECT		(1 << 8)
-#define   UHSIC_FORCE_XCVR_MODE			(1 << 15)
-#define   UHSIC_DISABLE_BUSRESET		(1 << 20)
+#define UHSIC_SUSPEND_EXIT_ON_EDGE		(1 << 7)
+#define UHSIC_DETECT_SHORT_CONNECT		(1 << 8)
+#define UHSIC_FORCE_XCVR_MODE			(1 << 15)
+#define UHSIC_DISABLE_BUSRESET			(1 << 20)
 
 #define UHSIC_MISC_CFG1				0xc18
-#define   UHSIC_PLLU_STABLE_COUNT(x)		(((x) & 0xfff) << 2)
+#define UHSIC_PLLU_STABLE_COUNT(x)		(((x) & 0xfff) << 2)
 
 #define UHSIC_PADS_CFG0				0xc1c
-#define   UHSIC_TX_RTUNEN			0xf000
-#define   UHSIC_TX_RTUNE(x)			(((x) & 0xf) << 12)
+#define UHSIC_TX_RTUNEN				0xf000
+#define UHSIC_TX_RTUNE(x)			(((x) & 0xf) << 12)
 
 #define UHSIC_PADS_CFG1				0xc20
-#define   UHSIC_PD_BG				(1 << 2)
-#define   UHSIC_PD_TX				(1 << 3)
-#define   UHSIC_PD_TRK				(1 << 4)
-#define   UHSIC_PD_RX				(1 << 5)
-#define   UHSIC_PD_ZI				(1 << 6)
-#define   UHSIC_RX_SEL				(1 << 7)
-#define   UHSIC_RPD_DATA			(1 << 9)
-#define   UHSIC_RPD_STROBE			(1 << 10)
-#define   UHSIC_RPU_DATA			(1 << 11)
-#define   UHSIC_RPU_STROBE			(1 << 12)
+#define UHSIC_PD_BG				(1 << 2)
+#define UHSIC_PD_TX				(1 << 3)
+#define UHSIC_PD_TRK				(1 << 4)
+#define UHSIC_PD_RX				(1 << 5)
+#define UHSIC_PD_ZI				(1 << 6)
+#define UHSIC_RX_SEL				(1 << 7)
+#define UHSIC_RPD_DATA				(1 << 9)
+#define UHSIC_RPD_STROBE			(1 << 10)
+#define UHSIC_RPU_DATA				(1 << 11)
+#define UHSIC_RPU_STROBE			(1 << 12)
 
 #define UHSIC_STAT_CFG0				0xc28
-#define   UHSIC_CONNECT_DETECT			(1 << 0)
+#define UHSIC_CONNECT_DETECT			(1 << 0)
 
 #define PMC_UTMIP_MASTER_CONFIG		0x310
 #define UTMIP_PWR(inst)			(1 << (inst))
@@ -392,11 +387,11 @@
 #define UTMIP_LINE_DEB_CNT(x)		(((x) & 0xf) << 16)
 
 #define PMC_UTMIP_UHSIC_FAKE		0x218
-#define USBON_VAL(inst)		(1 << ((4*(inst))+1))
+#define USBON_VAL(inst)			(1 << ((4*(inst))+1))
 #define USBON_VAL_P2			(1 << 9)
 #define USBON_VAL_P1			(1 << 5)
 #define USBON_VAL_P0			(1 << 1)
-#define USBOP_VAL(inst)		(1 << (4*(inst)))
+#define USBOP_VAL(inst)			(1 << (4*(inst)))
 #define USBOP_VAL_P2			(1 << 8)
 #define USBOP_VAL_P1			(1 << 4)
 #define USBOP_VAL_P0			(1 << 0)
@@ -406,7 +401,7 @@
 #define UTMIP_LINEVAL_WALK_EN_P2	(1 << 23)
 #define UTMIP_LINEVAL_WALK_EN_P1	(1 << 15)
 #define UTMIP_LINEVAL_WALK_EN_P0	(1 << 7)
-#define UTMIP_WAKE_VAL(inst, x)	(((x) & 0xf) << ((8*(inst))+4))
+#define UTMIP_WAKE_VAL(inst, x)		(((x) & 0xf) << ((8*(inst))+4))
 #define UTMIP_WAKE_VAL_P2(x)		(((x) & 0xf) << 20)
 #define UTMIP_WAKE_VAL_P1(x)		(((x) & 0xf) << 12)
 #define UTMIP_WAKE_VAL_P0(x)		(((x) & 0xf) << 4)
@@ -439,8 +434,8 @@
 #define PMC_USB_AO			0xf0
 #define PMC_POWER_DOWN_MASK		0xffff
 #define HSIC_RESERVED_P0		(3 << 14)
-#define HSIC_STOBE_VAL_PD_P0	(1 << 13)
-#define HSIC_DATA_VAL_PD_P0	(1 << 12)
+#define HSIC_STOBE_VAL_PD_P0		(1 << 13)
+#define HSIC_DATA_VAL_PD_P0		(1 << 12)
 #define USB_ID_PD(inst)			(1 << ((4*(inst))+3))
 #define VBUS_WAKEUP_PD(inst)		(1 << ((4*(inst))+2))
 #define USBON_VAL_PD(inst)		(1 << ((4*(inst))+1))
@@ -495,7 +490,7 @@
 #define UTMIP_HIGHZ_D			(1 << 30)
 
 #define UTMIP_PMC_WAKEUP0		0x84c
-#define  EVENT_INT_ENB			(1 << 0)
+#define EVENT_INT_ENB			(1 << 0)
 
 #define UTMIP_UHSIC_STATUS		0x214
 #define UTMIP_WALK_PTR_VAL(inst)	(0x3 << ((inst)*2))
@@ -516,15 +511,15 @@
 #define UTMIP_WALK_PTR_P1		(1 << 2)
 #define UTMIP_WALK_PTR_P0		(1 << 0)
 
-#define UTMIP_BIAS_STS0         0x840
-#define UTMIP_RCTRL_VAL(x)      (((x) & 0xffff) << 0)
-#define UTMIP_TCTRL_VAL(x)      (((x) & (0xffff << 16)) >> 16)
+#define UTMIP_BIAS_STS0         	0x840
+#define UTMIP_RCTRL_VAL(x)      	(((x) & 0xffff) << 0)
+#define UTMIP_TCTRL_VAL(x)      	(((x) & (0xffff << 16)) >> 16)
 
-#define PMC_UTMIP_TERM_PAD_CFG	0x1f8
-#define PMC_TCTRL_VAL(x)	(((x) & 0x1f) << 5)
-#define PMC_RCTRL_VAL(x)	(((x) & 0x1f) << 0)
+#define PMC_UTMIP_TERM_PAD_CFG		0x1f8
+#define PMC_TCTRL_VAL(x)		(((x) & 0x1f) << 5)
+#define PMC_RCTRL_VAL(x)		(((x) & 0x1f) << 0)
 
-#define UHSIC_SLEEPWALK_REG	0x210
+#define UHSIC_SLEEPWALK_REG		0x210
 #define UHSIC_DATA_RPD_D		(1 << 25)
 #define UHSIC_STRB_RPD_D		(1 << 24)
 #define UHSIC_DATA_RPD_C		(1 << 17)
@@ -536,68 +531,68 @@
 
 static u32 utmip_rctrl_val, utmip_tctrl_val;
 
-#endif
+#endif /* CONFIG_ARCH_TEGRA_2x_SOC */
 
 /* Common registers */
-#define UTMIP_MISC_CFG0		0x824
-#define   UTMIP_DPDM_OBSERVE		(1 << 26)
-#define   UTMIP_DPDM_OBSERVE_SEL(x)	(((x) & 0xf) << 27)
-#define   UTMIP_DPDM_OBSERVE_SEL_FS_J	UTMIP_DPDM_OBSERVE_SEL(0xf)
-#define   UTMIP_DPDM_OBSERVE_SEL_FS_K	UTMIP_DPDM_OBSERVE_SEL(0xe)
-#define   UTMIP_DPDM_OBSERVE_SEL_FS_SE1 UTMIP_DPDM_OBSERVE_SEL(0xd)
-#define   UTMIP_DPDM_OBSERVE_SEL_FS_SE0 UTMIP_DPDM_OBSERVE_SEL(0xc)
-#define   UTMIP_SUSPEND_EXIT_ON_EDGE	(1 << 22)
-#define   FORCE_PULLDN_DM	(1 << 8)
-#define   FORCE_PULLDN_DP	(1 << 9)
-#define   COMB_TERMS		(1 << 0)
-#define   ALWAYS_FREE_RUNNING_TERMS	(1 << 1)
+#define UTMIP_MISC_CFG0			0x824
+#define UTMIP_DPDM_OBSERVE		(1 << 26)
+#define UTMIP_DPDM_OBSERVE_SEL(x)	(((x) & 0xf) << 27)
+#define UTMIP_DPDM_OBSERVE_SEL_FS_J	UTMIP_DPDM_OBSERVE_SEL(0xf)
+#define UTMIP_DPDM_OBSERVE_SEL_FS_K	UTMIP_DPDM_OBSERVE_SEL(0xe)
+#define UTMIP_DPDM_OBSERVE_SEL_FS_SE1	UTMIP_DPDM_OBSERVE_SEL(0xd)
+#define UTMIP_DPDM_OBSERVE_SEL_FS_SE0	UTMIP_DPDM_OBSERVE_SEL(0xc)
+#define UTMIP_SUSPEND_EXIT_ON_EDGE	(1 << 22)
+#define FORCE_PULLDN_DM			(1 << 8)
+#define FORCE_PULLDN_DP			(1 << 9)
+#define COMB_TERMS			(1 << 0)
+#define ALWAYS_FREE_RUNNING_TERMS	(1 << 1)
 
-#define ULPIS2S_CTRL		0x418
-#define   ULPIS2S_ENA			(1 << 0)
-#define   ULPIS2S_SUPPORT_DISCONNECT	(1 << 2)
-#define   ULPIS2S_PLLU_MASTER_BLASTER60	(1 << 3)
-#define   ULPIS2S_SPARE(x)		(((x) & 0xF) << 8)
-#define   ULPIS2S_FORCE_ULPI_CLK_OUT	(1 << 12)
-#define   ULPIS2S_DISCON_DONT_CHECK_SE0	(1 << 13)
-#define   ULPIS2S_SUPPORT_HS_KEEP_ALIVE (1 << 14)
-#define   ULPIS2S_DISABLE_STP_PU	(1 << 15)
-#define   ULPIS2S_SLV0_CLAMP_XMIT	(1 << 16)
+#define ULPIS2S_CTRL			0x418
+#define ULPIS2S_ENA			(1 << 0)
+#define ULPIS2S_SUPPORT_DISCONNECT	(1 << 2)
+#define ULPIS2S_PLLU_MASTER_BLASTER60	(1 << 3)
+#define ULPIS2S_SPARE(x)		(((x) & 0xF) << 8)
+#define ULPIS2S_FORCE_ULPI_CLK_OUT	(1 << 12)
+#define ULPIS2S_DISCON_DONT_CHECK_SE0	(1 << 13)
+#define ULPIS2S_SUPPORT_HS_KEEP_ALIVE	(1 << 14)
+#define ULPIS2S_DISABLE_STP_PU		(1 << 15)
+#define ULPIS2S_SLV0_CLAMP_XMIT		(1 << 16)
 
 
-#define ULPI_TIMING_CTRL_0	0x424
-#define   ULPI_CLOCK_OUT_DELAY(x)	((x) & 0x1F)
-#define   ULPI_OUTPUT_PINMUX_BYP	(1 << 10)
-#define   ULPI_CLKOUT_PINMUX_BYP	(1 << 11)
-#define   ULPI_SHADOW_CLK_LOOPBACK_EN	(1 << 12)
-#define   ULPI_SHADOW_CLK_SEL		(1 << 13)
-#define   ULPI_CORE_CLK_SEL		(1 << 14)
-#define   ULPI_SHADOW_CLK_DELAY(x)	(((x) & 0x1F) << 16)
-#define   ULPI_LBK_PAD_EN		(1 << 26)
-#define   ULPI_LBK_PAD_E_INPUT_OR	(1 << 27)
-#define   ULPI_CLK_OUT_ENA		(1 << 28)
-#define   ULPI_CLK_PADOUT_ENA		(1 << 29)
+#define ULPI_TIMING_CTRL_0		0x424
+#define ULPI_CLOCK_OUT_DELAY(x)		((x) & 0x1F)
+#define ULPI_OUTPUT_PINMUX_BYP		(1 << 10)
+#define ULPI_CLKOUT_PINMUX_BYP		(1 << 11)
+#define ULPI_SHADOW_CLK_LOOPBACK_EN	(1 << 12)
+#define ULPI_SHADOW_CLK_SEL		(1 << 13)
+#define ULPI_CORE_CLK_SEL		(1 << 14)
+#define ULPI_SHADOW_CLK_DELAY(x)	(((x) & 0x1F) << 16)
+#define ULPI_LBK_PAD_EN			(1 << 26)
+#define ULPI_LBK_PAD_E_INPUT_OR		(1 << 27)
+#define ULPI_CLK_OUT_ENA		(1 << 28)
+#define ULPI_CLK_PADOUT_ENA		(1 << 29)
 
-#define ULPI_TIMING_CTRL_1	0x428
-#define   ULPI_DATA_TRIMMER_LOAD	(1 << 0)
-#define   ULPI_DATA_TRIMMER_SEL(x)	(((x) & 0x7) << 1)
-#define   ULPI_STPDIRNXT_TRIMMER_LOAD	(1 << 16)
-#define   ULPI_STPDIRNXT_TRIMMER_SEL(x)	(((x) & 0x7) << 17)
-#define   ULPI_DIR_TRIMMER_LOAD		(1 << 24)
-#define   ULPI_DIR_TRIMMER_SEL(x)	(((x) & 0x7) << 25)
+#define ULPI_TIMING_CTRL_1		0x428
+#define ULPI_DATA_TRIMMER_LOAD		(1 << 0)
+#define ULPI_DATA_TRIMMER_SEL(x)	(((x) & 0x7) << 1)
+#define ULPI_STPDIRNXT_TRIMMER_LOAD	(1 << 16)
+#define ULPI_STPDIRNXT_TRIMMER_SEL(x)	(((x) & 0x7) << 17)
+#define ULPI_DIR_TRIMMER_LOAD		(1 << 24)
+#define ULPI_DIR_TRIMMER_SEL(x)		(((x) & 0x7) << 25)
 
-#define UTMIP_SPARE_CFG0	0x834
-#define   FUSE_SETUP_SEL		(1 << 3)
-#define   FUSE_ATERM_SEL		(1 << 4)
+#define UTMIP_SPARE_CFG0		0x834
+#define FUSE_SETUP_SEL			(1 << 3)
+#define FUSE_ATERM_SEL			(1 << 4)
 
 #define FUSE_USB_CALIB_0		0x1F0
 #define FUSE_USB_CALIB_XCVR_SETUP(x)	(((x) & 0x7F) << 0)
 
-#define UHSIC_PLL_CFG0		0x800
+#define UHSIC_PLL_CFG0			0x800
 
-#define UHSIC_CMD_CFG0				0x824
-#define   UHSIC_PRETEND_CONNECT_DETECT		(1 << 5)
+#define UHSIC_CMD_CFG0			0x824
+#define UHSIC_PRETEND_CONNECT_DETECT	(1 << 5)
 
-#define UHSIC_SPARE_CFG0			0x82c
+#define UHSIC_SPARE_CFG0		0x82c
 
 /* These values (in milli second) are taken from the battery charging spec */
 #define TDP_SRC_ON_MS	 100
@@ -1709,7 +1704,7 @@ static int utmi_phy_postresume(struct tegra_usb_phy *phy, bool is_dpd)
 #else
 	void __iomem *pmc_base = IO_ADDRESS(TEGRA_PMC_BASE);
 #endif
-	unsigned  int inst = phy->instance;
+	unsigned int inst = phy->instance;
 
 #ifndef CONFIG_ARCH_TEGRA_2x_SOC
 	val = readl(pmc_base + PMC_SLEEP_CFG);
@@ -1738,8 +1733,6 @@ static int utmi_phy_postresume(struct tegra_usb_phy *phy, bool is_dpd)
 	val &= ~UTMIP_HS_DISCON_DISABLE;
 	writel(val, base + UTMIP_TX_CFG0);
 #endif
-
-
 	return 0;
 }
 
@@ -3011,7 +3004,6 @@ int tegra_usb_phy_bus_connect(struct tegra_usb_phy *phy)
 {
 	unsigned long val;
 	void __iomem *base = phy->regs;
-	struct tegra_uhsic_config *uhsic_config = phy->config;
 
 	if (phy->usb_phy_type == TEGRA_USB_PHY_TYPE_HSIC) {
 #ifndef CONFIG_ARCH_TEGRA_2x_SOC

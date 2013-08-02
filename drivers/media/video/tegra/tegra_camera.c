@@ -123,6 +123,10 @@ static int tegra_camera_clk_set_rate(struct tegra_camera_dev *dev)
 	struct clk *clk, *clk_parent;
 	struct tegra_camera_clk_info *info = &dev->info;
 	unsigned long parent_rate, parent_div_rate, parent_div_rate_pre;
+#ifdef CONFIG_ARCH_TEGRA_2x_SOC
+	u32 val;
+	void __iomem *apb_misc = IO_ADDRESS(TEGRA_APB_MISC_BASE);
+#endif
 
 	if (!info) {
 		dev_err(dev->dev,
@@ -183,8 +187,6 @@ static int tegra_camera_clk_set_rate(struct tegra_camera_dev *dev)
 			tegra_clk_cfg_ex(clk, TEGRA_CLK_VI_INP_SEL, 2);
 
 #ifdef CONFIG_ARCH_TEGRA_2x_SOC
-		u32 val;
-		void __iomem *apb_misc = IO_ADDRESS(TEGRA_APB_MISC_BASE);
 		val = readl(apb_misc + 0x42c);
 		writel(val | 0x1, apb_misc + 0x42c);
 #endif

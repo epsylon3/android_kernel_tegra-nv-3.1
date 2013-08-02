@@ -160,7 +160,7 @@ static inline unsigned int order_of(size_t len, size_t min_shift)
 	return fls(len)-1;
 }
 
-extern void dump_nvmap();
+extern void dump_nvmap(void);
 
 /* returns the free size in bytes of the buddy heap; must be called while
  * holding the parent heap's lock. */

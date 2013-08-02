@@ -15,6 +15,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307, USA
  */
+
 #include <linux/i2c.h>
 #include <linux/pda_power.h>
 #include <linux/platform_device.h>
@@ -44,6 +45,7 @@
 #define PMC_CTRL		0x0
 #define PMC_CTRL_INTR_LOW	(1 << 17)
 
+#if 0
 static int ac_ok		= TEGRA_GPIO_PV3;
 static int charge_disable	= TEGRA_GPIO_PR6;
 
@@ -96,6 +98,7 @@ static void set_charge(int flags)
 		gpio_set_value(charge_disable, 1);
 	/* USB charging not supported on Ventana */
 }
+#endif
 
 extern enum cable_type_t set_cable_status;
 static int max8907c_power_vchg_f_cb(int vdcin)
@@ -155,6 +158,7 @@ static int max8907c_power_topoff_cb(void)
 	return psy->set_property(psy, POWER_SUPPLY_PROP_STATUS, &value);
 }
 
+#if 0
 static struct resource n1_pda_resources[] = {
 	[0] = {
 		.name	= "ac",
@@ -181,12 +185,13 @@ static struct platform_device n1_pda_power_device = {
 		.platform_data	= &n1_pda_data,
 	},
 };
+#endif
 
 static struct max8907c_charger_pdata n1_charger_pdata = {
 	.irq 			= INT_EXTERNAL_PMU,
-    .topoff_cb = max8907c_power_topoff_cb,
-    .vchg_f_cb = max8907c_power_vchg_f_cb,
-    .vchg_r_f_cb = max8907c_power_vchg_r_f_cb, /* FACTORY TEST BINARY */
+	.topoff_cb		= max8907c_power_topoff_cb,
+	.vchg_f_cb		= max8907c_power_vchg_f_cb,
+	.vchg_r_f_cb		= max8907c_power_vchg_r_f_cb, /* FACTORY TEST BINARY */
 	.topoff_threshold	= MAX8907C_TOPOFF_20PERCENT,
 	.restart_hysteresis	= MAX8907C_RESTART_100MV,
 	.fast_charging_current	= MAX8907C_FASTCHARGE_460MA,
@@ -438,6 +443,7 @@ static struct i2c_board_info __initdata n1_regulators[] = {
 	},
 };
 
+#if 0
 static void n1_board_suspend(int lp_state, enum suspend_stage stg)
 {
 	if ((lp_state == TEGRA_SUSPEND_LP1) && (stg == TEGRA_SUSPEND_BEFORE_CPU))
@@ -449,6 +455,7 @@ static void n1_board_resume(int lp_state, enum resume_stage stg)
 	if ((lp_state == TEGRA_SUSPEND_LP1) && (stg == TEGRA_RESUME_AFTER_CPU))
 		tegra_console_uart_resume();
 }
+#endif
 
 static struct tegra_suspend_platform_data n1_suspend_data = {
 	.cpu_timer	= 2000,
@@ -460,9 +467,9 @@ static struct tegra_suspend_platform_data n1_suspend_data = {
 	.corereq_high	= true,
 	.sysclkreq_high	= true,
 	.wake_enb	= TEGRA_WAKE_GPIO_PO5 \
-					| TEGRA_WAKE_GPIO_PU5 \
-					| TEGRA_WAKE_PWR_INT \
-					| TEGRA_WAKE_GPIO_PY6,
+				| TEGRA_WAKE_GPIO_PU5 \
+				| TEGRA_WAKE_PWR_INT \
+				| TEGRA_WAKE_GPIO_PY6,
 	.wake_high	= TEGRA_WAKE_GPIO_PU5,
 	.wake_low	= TEGRA_WAKE_GPIO_PO5 \
 				| TEGRA_WAKE_PWR_INT \
@@ -494,4 +501,3 @@ int __init n1_regulator_init(void)
 
 	return 0;
 }
-

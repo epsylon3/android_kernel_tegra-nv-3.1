@@ -23,7 +23,7 @@
 #define MAX8907C_II2RR_VERSION_REV_B	0x10
 #define MAX8907C_II2RR_VERSION_REV_C	0x30
 
-#define MAX8907C_REGULATOR_CNT (ARRAY_SIZE(max8907c_regulators))
+#define MAX8907C_REGULATOR_CNT		(ARRAY_SIZE(max8907c_regulators))
 
 struct max8907c_regulator_info {
 	u32 min_uV;

@@ -140,6 +140,7 @@ static int tegra_wm8994_hw_params(struct snd_pcm_substream *substream,
 	return 0;
 }
 
+#if 0
 static int tegra_bt_sco_hw_params(struct snd_pcm_substream *substream,
 					struct snd_pcm_hw_params *params)
 {
@@ -254,6 +255,7 @@ static int tegra_spdif_hw_params(struct snd_pcm_substream *substream,
 
 	return 0;
 }
+#endif
 
 static int tegra_hw_free(struct snd_pcm_substream *substream)
 {
@@ -270,6 +272,7 @@ static struct snd_soc_ops tegra_wm8994_ops = {
 	.hw_free = tegra_hw_free,
 };
 
+#if 0
 static struct snd_soc_ops tegra_wm8994_bt_sco_ops = {
 	.hw_params = tegra_bt_sco_hw_params,
 	.hw_free = tegra_hw_free,
@@ -279,6 +282,7 @@ static struct snd_soc_ops tegra_spdif_ops = {
 	.hw_params = tegra_spdif_hw_params,
 	.hw_free = tegra_hw_free,
 };
+#endif
 
 static struct snd_soc_dai_link tegra_wm8994_dai[] = {
 	{

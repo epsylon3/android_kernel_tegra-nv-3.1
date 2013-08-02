@@ -54,6 +54,7 @@ static inline u32 emc_readl(unsigned long addr)
 	return readl(emc + addr);
 }
 
+#ifndef CONFIG_MACH_N1
 /* read LPDDR2 memory modes */
 static int tegra_emc_read_mrr(unsigned long addr)
 {
@@ -82,6 +83,7 @@ static int tegra_emc_read_mrr(unsigned long addr)
 
 	return value;
 }
+#endif
 
 static const unsigned long emc_reg_addr[TEGRA_EMC_NUM_REGS] = {
 	0x2c,	/* RC */

@@ -26,7 +26,8 @@ static struct i2c_client *max8907c_i2c_power_client = NULL;
 struct mutex adc_en_lock;
 
 /* Path => /sys/devices/platform/tegra-i2c.3/i2c-4/4-003c/max8907c-adc */
-#if defined(CONFIG_MACH_N1)
+//#if defined(CONFIG_MACH_N1)
+#if 0
 static ssize_t pmic_adc_test(struct device *dev, struct device_attribute *attr, char *buf)
 {
 	int read;
@@ -241,7 +242,6 @@ static int __devinit max8907c_adc_probe(struct platform_device *pdev)
 	max8907c_set_bits(max8907c_i2c_adc_client, MAX8907_ADC_AVG_CNFG1, 0xC0, 0xC0);
 	max8907c_set_bits(max8907c_i2c_adc_client, MAX8907_ADC_ACQ_CNFG1, 0xA0, 0xA0);
 	max8907c_set_bits(max8907c_i2c_adc_client, MAX8907_ADC_SCHED, 0x03, 0x01);
-
 #else
 	max8907c_set_bits(max8907c_i2c_adc_client, MAX8907_ADC_RES_CNFG1, 0x40, 0x00);
 	max8907c_set_bits(max8907c_i2c_adc_client, MAX8907_ADC_AVG_CNFG1, 0x40, 0x40);
@@ -251,7 +251,7 @@ static int __devinit max8907c_adc_probe(struct platform_device *pdev)
 
 
 //#if defined(CONFIG_MACH_N1)
-# if 0
+#if 0
 	if (device_create_file(&pdev->dev, &dev_attr_pmic_adc) < 0)
 	{
 		pr_err("Failed to create device file(%s)!\n", dev_attr_pmic_adc.attr.name);

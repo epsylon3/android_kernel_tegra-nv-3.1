@@ -37,8 +37,8 @@
 #define GART_ENTRY_ADDR		0x28
 #define GART_ENTRY_DATA		0x2c
 
-#define VMM_NAME "iovmm-gart"
-#define DRIVER_NAME "tegra_gart"
+#define VMM_NAME		"iovmm-gart"
+#define DRIVER_NAME		"tegra_gart"
 
 #define GART_PAGE_SHIFT		12
 #define GART_PAGE_SIZE		(1 << GART_PAGE_SHIFT)
